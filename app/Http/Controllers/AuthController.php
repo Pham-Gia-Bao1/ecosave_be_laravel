@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\ExpertDetail;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use GuzzleHttp\Client;
+
 class AuthController extends Controller
 {
     /**
@@ -71,23 +73,23 @@ class AuthController extends Controller
      **/
 
 
-     public function login(Request $request)
-     {
-         $validator = Validator::make($request->all(), [
-             'email' => 'required|email',
-             'password' => 'required',
-         ]);
+    public function login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-         if ($validator->fails()) {
-             return response()->json($validator->errors(), 422);
-         }
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
 
-         if (!$token = auth()->attempt($validator->validated())) {
-             return response()->json(['error' => 'Unauthorized'], 401);
-         }
+        if (!$token = auth()->attempt($validator->validated())) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
 
-         return $this->createNewToken($token);
-     }
+        return $this->createNewToken($token);
+    }
 
 
 
@@ -152,9 +154,10 @@ class AuthController extends Controller
             'name' => 'nullable',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string||confirmed|min:6|max:25',
+            'address' => 'required|string',
+            'latitude' => 'required',
+            'longitude' => 'required',
             'role_id' => 'required|exists:roles,id',
-            'experience' => 'nullable|string', // Trường experience có thể null
-            'certificate' => 'nullable|string', // Trường certificate có thể null
         ]);
 
         if ($validator->fails()) {
@@ -163,36 +166,20 @@ class AuthController extends Controller
 
         // Tạo người dùng mới
         $user = User::create([
-            'name' => 'User',
+            'username' => $request->name, // Thay 'name' thành 'username'
             'email' => $request->email,
+            'email_verified_at' => now(),
             'password' => bcrypt($request->password),
-            'address' => '',
-            'profile_picture' => asset('assets/img/avatar/avatar-4.png'),
-            'date_of_birth' => null,
-            'phone_number' => '',
-            'gender' => '',
-            'status' => true,
-            'role_id' => $request->role_id,
+            'address' => $request->address, // Địa chỉ mặc định trống
+            'avatar' => asset('assets/img/avatar/avatar-4.png'), // Thay 'profile_picture' thành 'avatar'
+            'is_active' => true, // Sử dụng 'is_active' thay vì 'status'
+            'role' => $request->role_id, // Thay 'role_id' thành 'role'
+            'phone_number' => '', // Số điện thoại mặc định trống
+            'latitude' => $request->latitude, // Mặc định giá trị null
+            'longitude' => $request->longitude, // Mặc định giá trị null
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-
-        // Nếu vai trò là người dùng chuyên gia (role_id = 3) và có trường experience và certificate được cung cấp
-        if ($request->role_id == 3 && $request->has('experience') && $request->has('certificate')) {
-            // Kiểm tra xem đã có dữ liệu trong bảng expert_details tương ứng với user_id của người dùng mới hay không
-            $checkExpert = DB::table('expert_details')->where('user_id', $user->id)->exists();
-
-            // Nếu có dữ liệu, xóa dữ liệu cũ trước khi tạo mới
-            if ($checkExpert) {
-                DB::table('expert_details')->where('user_id', $user->id)->delete();
-            }
-
-            // Tạo chi tiết chuyên gia mới
-            ExpertDetail::create([
-                'user_id' => $user->id,
-                'certificate' => $request->certificate,
-                'experience' => $request->experience,
-                'count_rating' => 5
-            ]);
-        }
 
         return response()->json([
             'message' => 'User successfully registered',
@@ -318,5 +305,4 @@ class AuthController extends Controller
             'user' => $user,
         ], 201);
     }
-
 }
