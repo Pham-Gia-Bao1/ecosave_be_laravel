@@ -181,6 +181,10 @@ class AuthController extends Controller
             'updated_at' => now(),
         ]);
 
+        if($request->role_id == 3){
+            
+        }
+
         return response()->json([
             'message' => 'User successfully registered',
             'user' => $user
@@ -242,14 +246,83 @@ class AuthController extends Controller
         return response()->json(['message' => 'User successfully signed out']);
     }
 
+    // /**
+    //  * Refresh a token.
+    //  *
+    //  * @return \Illuminate\Http\JsonResponse
+    //  */
+    // // public function refresh()
+    // // {
+    // //     return $this->createNewToken(auth()->refresh()); // using ok
+    // // }
+
     /**
-     * Refresh a token.
+     * Refresh the access token using the refresh token
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @OA\Post(
+     *      path="/api/auth/refresh",
+     *      tags={"Auth"},
+     *      summary="Refresh access token",
+     *      description="Get a new access token using a valid refresh token",
+     *      @OA\Response(
+     *          response=200,
+     *          description="Successfully refreshed token",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="access_token", type="string", example="NEW_ACCESS_TOKEN_HERE"),
+     *              @OA\Property(property="refresh_token", type="string", example="NEW_REFRESH_TOKEN_HERE"),
+     *              @OA\Property(property="expires_in", type="integer", example=3600),
+     *              @OA\Property(property="token_type", type="string", example="bearer"),
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=400,
+     *          description="Bad request. Refresh token is required."
+     *      ),
+     *      @OA\Response(
+     *          response=401,
+     *          description="Unauthorized. Invalid or expired refresh token."
+     *      ),
+     *      @OA\Response(
+     *          response=500,
+     *          description="Internal server error."
+     *      ),
+     *      @OA\Parameter(
+     *          name="Authorization",
+     *          in="header",
+     *          description="Bearer refresh token",
+     *          required=true,
+     *          @OA\Schema(
+     *              type="string",
+     *              example="Bearer REFRESH_TOKEN_HERE"
+     *          )
+     *      )
+     * )
      */
-    public function refresh()
+
+
+    public function refresh(Request $request)
     {
-        return $this->createNewToken(auth()->refresh()); // using ok
+        $refreshToken = $request->header('Authorization');
+
+        if (!$refreshToken) {
+            return response()->json(['error' => 'Refresh token is required'], 400);
+        }
+
+        try {
+            // Xác thực refresh token
+            $decodedToken = auth()->setToken(str_replace('Bearer ', '', $refreshToken))->checkOrFail();
+
+            if (!isset($decodedToken['refresh']) || !$decodedToken['refresh']) {
+                return response()->json(['error' => 'Invalid refresh token'], 401);
+            }
+
+            // Tạo access token mới
+            $newToken = auth()->tokenById(auth()->user()->id);
+
+            return $this->createNewToken($newToken);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Refresh token expired or invalid'], 401);
+        }
     }
 
     /**
@@ -273,14 +346,16 @@ class AuthController extends Controller
 
     public function createNewToken($token)
     {
+        $refreshToken = auth()->claims(['refresh' => true])->setTTL(20160)->tokenById(auth()->user()->id); // Refresh token TTL = 14 ngày (20160 phút)
+
         return response()->json([
             'access_token' => $token,
+            'refresh_token' => $refreshToken,
             'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60, // Thời gian sống của token tính theo giây
-            'user' => auth()->user() // using ok
+            'expires_in' => auth()->factory()->getTTL() * 60,
+            'user' => auth()->user()
         ]);
     }
-
 
     public function changePassWord(Request $request)
     {

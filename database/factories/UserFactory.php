@@ -18,11 +18,19 @@ class UserFactory extends Factory
     public function definition()
     {
         return [
-            'name' => fake()->name(),
+            'username' => fake()->userName(), // Thay 'name' thành 'username'
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-            'remember_token' => Str::random(10),
+            'password' => bcrypt('password'), // Mật khẩu mặc định được mã hóa
+            'is_active' => true,
+            'avatar' => fake()->imageUrl(100, 100, 'avatar', true, 'User Avatar'), // URL hình đại diện
+            'address' => fake()->address(),
+            'role' => 2, // Ví dụ: role 2 là người dùng thông thường
+            'phone_number' => fake()->phoneNumber(),
+            'latitude' => fake()->latitude(),
+            'longitude' => fake()->longitude(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
     }
 
