@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExpertDetail;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -147,49 +148,72 @@ class AuthController extends Controller
      * )
      */
 
-    public function register(Request $request)
-    {
-        // Kiểm tra thông tin người dùng cho các vai trò khác
-        $validator = Validator::make($request->all(), [
-            'name' => 'nullable',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string||confirmed|min:6|max:25',
-            'address' => 'required|string',
-            'latitude' => 'required',
-            'longitude' => 'required',
-            'role_id' => 'required|exists:roles,id',
-        ]);
+     public function register(Request $request)
+     {
+         // Kiểm tra thông tin người dùng cho các vai trò khác
+         $validator = Validator::make($request->all(), [
+             'name' => 'nullable',
+             'email' => 'required|email|unique:users,email',
+             'password' => 'required|string|confirmed|min:6|max:25',
+             'address' => 'required|string',
+             'latitude' => 'required',
+             'longitude' => 'required',
+             'role_id' => 'required|exists:roles,id',
+             // Thêm các trường cần thiết cho Store nếu role_id = 3
+             'store_name' => 'required_if:role_id,3|string|max:255',
+             'avatar' => 'nullable|string|max:255',
+             'store_type' => 'required_if:role_id,3|string|max:100',
+             'opening_hours' => 'nullable|string|max:255',
+             'description' => 'nullable|string',
+         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
-        }
+         if ($validator->fails()) {
+             return response()->json($validator->errors()->toJson(), 400);
+         }
 
-        // Tạo người dùng mới
-        $user = User::create([
-            'username' => $request->name, // Thay 'name' thành 'username'
-            'email' => $request->email,
-            'email_verified_at' => now(),
-            'password' => bcrypt($request->password),
-            'address' => $request->address, // Địa chỉ mặc định trống
-            'avatar' => asset('assets/img/avatar/avatar-4.png'), // Thay 'profile_picture' thành 'avatar'
-            'is_active' => true, // Sử dụng 'is_active' thay vì 'status'
-            'role' => $request->role_id, // Thay 'role_id' thành 'role'
-            'phone_number' => '', // Số điện thoại mặc định trống
-            'latitude' => $request->latitude, // Mặc định giá trị null
-            'longitude' => $request->longitude, // Mặc định giá trị null
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+         // Tạo người dùng mới
+         $user = User::create([
+             'username' => $request->name, // Thay 'name' thành 'username'
+             'email' => $request->email,
+             'email_verified_at' => now(),
+             'password' => bcrypt($request->password),
+             'address' => $request->address, // Địa chỉ mặc định trống
+             'avatar' => asset('assets/img/avatar/avatar-4.png'), // Thay 'profile_picture' thành 'avatar'
+             'is_active' => true, // Sử dụng 'is_active' thay vì 'status'
+             'role' => $request->role_id, // Thay 'role_id' thành 'role'
+             'phone_number' => '', // Số điện thoại mặc định trống
+             'latitude' => $request->latitude, // Mặc định giá trị null
+             'longitude' => $request->longitude, // Mặc định giá trị null
+             'created_at' => now(),
+             'updated_at' => now(),
+         ]);
 
-        if($request->role_id == 3){
-            
-        }
+         // Nếu role_id là 3 thì tạo thông tin cửa hàng
+         if ($request->role_id == 3) {
+             $store = Store::create([
+                 'store_name' => $request->store_name,
+                 'avatar' => $request->avatar ?? 'https://via.placeholder.com/200x200', // Avatar mặc định
+                 'store_type' => $request->store_type,
+                 'opening_hours' => $request->opening_hours,
+                 'status' => 'active', // Mặc định trạng thái là active
+                 'contact_email' => $request->email,
+                 'contact_phone' => $request->phone_number ?? null,
+                 'latitude' => $request->latitude,
+                 'longitude' => $request->longitude,
+                 'description' => $request->description,
+                 'user_id' => $user->id, // Liên kết với user vừa tạo
+                 'created_at' => now(),
+                 'updated_at' => now(),
+             ]);
+         }
 
-        return response()->json([
-            'message' => 'User successfully registered',
-            'user' => $user
-        ], 201);
-    }
+         return response()->json([
+             'message' => 'User successfully registered',
+             'user' => $user,
+             'store' => $request->role_id == 3 ? $store : null, // Nếu có tạo store thì trả về thông tin
+         ], 201);
+     }
+
 
 
     /**
