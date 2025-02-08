@@ -13,10 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('roles', function (Blueprint $table) {
+        Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->timestamps();
+            $table->string('name', 255)->nullable(false); // Đổi notNull() thành nullable(false)
+            $table->text('description')->nullable();
+            $table->timestamps(); // Sẽ tự động tạo created_at và updated_at
         });
     }
 
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('categories');
     }
 };

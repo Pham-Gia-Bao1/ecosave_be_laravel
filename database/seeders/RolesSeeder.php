@@ -20,6 +20,6 @@ class RolesSeeder extends Seeder
             ['name' => 'customer'],
             ['name' => 'store'],
         ];
-        DB::table('role')->insert($data);
+        DB::table('roles')->insert($data);
     }
 }

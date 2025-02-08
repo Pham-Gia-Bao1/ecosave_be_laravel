@@ -50,7 +50,7 @@ class UsersSeeder extends Seeder
             ]
         ];
 
-        DB::table('user')->insert($data);
+        DB::table('users')->insert($data);
 
         // Thêm dữ liệu bằng factory
         User::factory()->count(5)->create();
