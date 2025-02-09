@@ -3,7 +3,9 @@
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie', 'api/csrf-token'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://localhost:3000',  // or your Next.js app URL
+    ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
