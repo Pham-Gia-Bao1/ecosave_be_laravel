@@ -35,5 +35,6 @@ Route::group(['prefix' => 'stores/{storeId}', 'middleware' => 'auth:api'], funct
     Route::get('/products', [ProductController::class, 'getProductsByStore']);
     Route::post('/products', [ProductController::class, 'postAddProduct']);
     Route::get('/products/{productId}', [ProductController::class, 'getProductByStore']);
+    Route::put('/products/{productId}', [ProductController::class, 'putUpdateProduct']);
 });
 

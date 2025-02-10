@@ -19,8 +19,8 @@ class ProductController extends Controller
         $longitude = $user->longitude;
 
         $products = Product::with(['store', 'category', 'images'])
-        ->select('products.*')
-        ->selectRaw("
+            ->select('products.*')
+            ->selectRaw("
             ( 6371 * acos( cos( radians(?) ) *
             cos( radians( stores.latitude ) )
             * cos( radians( stores.longitude ) - radians(?)
@@ -93,44 +93,84 @@ class ProductController extends Controller
 
     public function getProductsByStore($storeId)
     {
-        $store = Store::findOrFail($storeId);
-        $products = $store->products()->with(['store', 'category'])->paginate(10);
-        return response()->json($products);
+        try {
+            $store = Store::findOrFail($storeId);
+            $products = $store->products()->with(['store', 'category'])->paginate(10);
+            return response()->json($products);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Không thể lấy danh sách sản phẩm', 'message' => $e->getMessage()], 500);
+        }
     }
-
 
     public function postAddProduct(Request $request, $storeId)
     {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'original_price' => 'required|numeric|min:0',
+                'discount_percent' => 'required|integer|min:0|max:100',
+                'product_type' => 'required|string|max:255',
+                'discounted_price' => 'nullable|numeric|min:0',
+                'expiration_date' => 'nullable|date',
+                'stock_quantity' => 'required|integer|min:0',
+                'store_id' => 'required|exists:stores,id',
+                'category_id' => 'required|exists:categories,id',
+            ]);
 
+            $store = Store::findOrFail($storeId);
+            $productData = $request->all();
+            $productData['store_id'] = $store->id;
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'original_price' => 'required|numeric|min:0',
-            'discount_percent' => 'required|integer|min:0|max:100',
-            'product_type' => 'required|string|max:255',
-            'discounted_price' => 'nullable|numeric|min:0',
-            'expiration_date' => 'nullable|date',
-            'stock_quantity' => 'required|integer|min:0',
-            'store_id' => 'required|exists:stores,id',
-            'category_id' => 'required|exists:categories,id',
-        ]);
-
-
-        $store = Store::findOrFail($storeId);
-        $productData = $request->all();
-        $productData['store_id'] = $store->id;
-
-
-        $product = Product::create($productData);
-        return response()->json(['message' => 'Sản phẩm đã được thêm!', 'product' => $product], 201);
+            $product = Product::create($productData);
+            return response()->json(['message' => 'Sản phẩm đã được thêm!', 'product' => $product], 201);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Cửa hàng không tồn tại!'], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Dữ liệu không hợp lệ!', 'message' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi thêm sản phẩm!', 'message' => $e->getMessage()], 500);
+        }
     }
-
 
     public function getProductByStore($storeId, $productId)
     {
-        $product = Product::where('store_id', $storeId)->findOrFail($productId);
-        return response()->json($product);
+        try {
+            $product = Product::where('store_id', $storeId)->findOrFail($productId);
+            return response()->json($product);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Sản phẩm không tồn tại!'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Không thể lấy sản phẩm', 'message' => $e->getMessage()], 500);
+        }
     }
 
+    public function putUpdateProduct(Request $request, $storeId, $productId)
+    {
+        try {
+            $product = Product::where('store_id', $storeId)->findOrFail($productId);
+
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'original_price' => 'required|numeric|min:0',
+                'discount_percent' => 'required|integer|min:0|max:100',
+                'product_type' => 'required|string|max:255',
+                'discounted_price' => 'nullable|numeric|min:0',
+                'expiration_date' => 'nullable|date',
+                'stock_quantity' => 'required|integer|min:0',
+                'store_id' => 'required|exists:stores,id',
+                'category_id' => 'required|exists:categories,id',
+            ]);
+
+            $product->update($request->all());
+            return response()->json(['message' => 'Sản phẩm đã được cập nhật!', 'product' => $product]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Sản phẩm không tồn tại!'], 404);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['error' => 'Dữ liệu không hợp lệ!', 'message' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi cập nhật sản phẩm!', 'message' => $e->getMessage()], 500);
+        }
+    }
 }
