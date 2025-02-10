@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Store;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -87,4 +90,47 @@ class ProductController extends Controller
 
         return response()->json($formattedProduct);
     }
+
+    public function getProductsByStore($storeId)
+    {
+        $store = Store::findOrFail($storeId);
+        $products = $store->products()->with(['store', 'category'])->paginate(10);
+        return response()->json($products);
+    }
+
+
+    public function postAddProduct(Request $request, $storeId)
+    {
+
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'original_price' => 'required|numeric|min:0',
+            'discount_percent' => 'required|integer|min:0|max:100',
+            'product_type' => 'required|string|max:255',
+            'discounted_price' => 'nullable|numeric|min:0',
+            'expiration_date' => 'nullable|date',
+            'stock_quantity' => 'required|integer|min:0',
+            'store_id' => 'required|exists:stores,id',
+            'category_id' => 'required|exists:categories,id',
+        ]);
+
+
+        $store = Store::findOrFail($storeId);
+        $productData = $request->all();
+        $productData['store_id'] = $store->id;
+
+
+        $product = Product::create($productData);
+        return response()->json(['message' => 'Sản phẩm đã được thêm!', 'product' => $product], 201);
+    }
+
+
+    public function getProductByStore($storeId, $productId)
+    {
+        $product = Product::where('store_id', $storeId)->findOrFail($productId);
+        return response()->json($product);
+    }
+
 }

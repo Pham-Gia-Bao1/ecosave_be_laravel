@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Product;
 use App\Models\Store;
+use App\Models\Product;
 use App\Models\Category;
 use App\Models\Image;
 
@@ -31,23 +31,28 @@ class ProductSeeder extends Seeder
                 'images' => [
                     'https://www.lottemart.vn/data/images/product/sua-tuoi-tiet-trung-vinamilk-100-co-duong-1l.jpg',
                     'https://www.lottemart.vn/data/images/product/sua-tuoi-tiet-trung-vinamilk-100-co-duong-1l-2.jpg'
-                ]
+                ],
+                'expiration_date' => now()->addMonths(6),
             ],
             // Thêm các sản phẩm khác tương tự
         ];
 
         foreach ($products as $productData) {
             $category = Category::firstOrCreate(['name' => $productData['category']]);
+            
+            $discountedPrice = $productData['price'] * (100 - ($productData['discount'] ?? 0)) / 100;
+            
             $product = Product::create([
                 'name' => $productData['name'],
                 'description' => 'Mô tả cho ' . $productData['name'],
                 'original_price' => $productData['price'],
-                'discount_price' => $productData['price'] * (100 - ($productData['discount'] ?? 0)) / 100,
+                'discounted_price' => $discountedPrice,
                 'discount_percent' => $productData['discount'] ?? 0,
                 'product_type' => 'store_selling',
                 'stock_quantity' => rand(10, 100),
                 'store_id' => $store->id,
                 'category_id' => $category->id,
+                'expiration_date' => $productData['expiration_date'] ?? null,
             ]);
 
             // Thêm ảnh cho sản phẩm

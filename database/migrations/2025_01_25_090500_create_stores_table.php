@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('longitude', 9, 6)->nullable();
             $table->text('description')->nullable();
             $table->unsignedBigInteger('user_id');
+            $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

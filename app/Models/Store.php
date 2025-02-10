@@ -4,14 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Store extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'stores';
 
-    // Danh sách các cột có thể được gán hàng loạt
     protected $fillable = [
         'store_name',
         'avatar',
@@ -28,7 +28,8 @@ class Store extends Model
         'updated_at',
     ];
 
-    // Mối quan hệ với User
+    protected $dates = ['deleted_at'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
