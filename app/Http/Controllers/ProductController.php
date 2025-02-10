@@ -173,4 +173,56 @@ class ProductController extends Controller
             return response()->json(['error' => 'Lỗi khi cập nhật sản phẩm!', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function deleteProduct($storeId, $productId)
+    {
+        try {
+            $product = Product::where('store_id', $storeId)->findOrFail($productId);
+            $product->delete();
+            return response()->json(['message' => 'Sản phẩm đã được xóa!']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Sản phẩm không tồn tại!'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi xóa sản phẩm!', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getTrashedProductsByStore($storeId)
+    {
+        try {
+            $products = Product::onlyTrashed()->where('store_id', $storeId)->paginate(10);
+            if ($products->isEmpty()) {
+                return response()->json(['message' => 'Không có sản phẩm nào bị xóa!'], 404);
+            }
+            return response()->json($products);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi lấy danh sách sản phẩm đã xóa!', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function restoreProduct($storeId, $productId)
+    {
+        try {
+            $product = Product::onlyTrashed()->where('store_id', $storeId)->findOrFail($productId);
+            $product->restore();
+            return response()->json(['message' => 'Sản phẩm đã được khôi phục!', 'product' => $product]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Sản phẩm không tồn tại hoặc chưa bị xóa!'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi khôi phục sản phẩm!', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function forceDeleteProduct($storeId, $productId)
+    {
+        try {
+            $product = Product::onlyTrashed()->where('store_id', $storeId)->findOrFail($productId);
+            $product->forceDelete();
+            return response()->json(['message' => 'Sản phẩm đã được xóa vĩnh viễn!']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Sản phẩm không tồn tại hoặc chưa bị xóa!'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Lỗi khi xóa vĩnh viễn sản phẩm!', 'message' => $e->getMessage()], 500);
+        }
+    }
 }

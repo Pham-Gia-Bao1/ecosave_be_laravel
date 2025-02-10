@@ -17,6 +17,8 @@ use App\Http\Controllers\ProductController;
 |
 */
 
+Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/{id}', [ProductController::class, 'productDetail']);
 
 require __DIR__ . '/auth.php';
 
@@ -26,15 +28,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::group(['middleware' => 'auth:api'], function () {
     Route::get('/users', [UserController::class, 'index']);
-
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::get('/products/{id}', [ProductController::class, 'productDetail']);
 });
 
-Route::group(['prefix' => 'stores/{storeId}', 'middleware' => 'auth:api'], function () {
-    Route::get('/products', [ProductController::class, 'getProductsByStore']);
-    Route::post('/products', [ProductController::class, 'postAddProduct']);
-    Route::get('/products/{productId}', [ProductController::class, 'getProductByStore']);
-    Route::put('/products/{productId}', [ProductController::class, 'putUpdateProduct']);
+Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api'], function () {
+    Route::get('/', [ProductController::class, 'getProductsByStore']);
+    Route::post('/', [ProductController::class, 'postAddProduct']);
+    Route::get('/{productId}', [ProductController::class, 'getProductByStore']);
+    Route::put('/{productId}', [ProductController::class, 'putUpdateProduct']);
+    Route::delete('/{productId}', [ProductController::class, 'deleteProduct']);
+    Route::post('/{productId}/restore', [ProductController::class, 'restoreProduct']);
+    Route::delete('/{productId}/force-delete', [ProductController::class, 'forceDeleteProduct']);
 });
 
