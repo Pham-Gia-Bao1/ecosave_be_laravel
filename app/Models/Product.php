@@ -21,6 +21,7 @@ class Product extends Model
         'stock_quantity',
         'store_id',
         'category_id',
+        'rating'
     ];
 
     protected $dates = ['deleted_at'];

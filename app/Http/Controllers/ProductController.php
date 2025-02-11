@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ApiResponse;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Store;
@@ -14,93 +15,77 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $latitude = $user->latitude;
-        $longitude = $user->longitude;
+        $query = Product::with(['store', 'category', 'images']);
 
-        $products = Product::with(['store', 'category', 'images'])
-            ->select('products.*')
-            ->selectRaw("
-            ( 6371 * acos( cos( radians(?) ) *
-            cos( radians( stores.latitude ) )
-            * cos( radians( stores.longitude ) - radians(?)
-            ) + sin( radians(?) ) *
-            sin( radians( stores.latitude ) ) )
-            ) AS distance", [$latitude, $longitude, $latitude])
-            ->join('stores', 'products.store_id', '=', 'stores.id')
-            ->orderBy('distance')
-            ->get();
+        // Tìm kiếm theo tên sản phẩm
+        if ($request->has('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
 
-        $formattedProducts = $products->map(function ($product) {
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'images' => $product->images->map(function ($image) {
-                    return [
-                        'url' => $image->image_url,
-                        'order' => $image->image_order
-                    ];
-                }),
-                'distance' => round($product->distance, 2),
-                'store_name' => explode(' ', $product->store->store_name)[0],
-                'product_type' => $product->product_type,
-                'original_price' => $product->original_price,
-                'discount_price' => $product->discount_price,
-                'discount_percent' => $product->discount_percent,
-            ];
-        });
+        // Lọc theo tên cửa hàng
+        if ($request->has('store_name')) {
+            $query->whereHas('store', function ($q) use ($request) {
+                $q->where('store_name', 'like', '%' . $request->store_name . '%');
+            });
+        }
 
-        return response()->json($formattedProducts);
+            // Lọc theo nhiều danh mục (nhiều category_id)
+        if ($request->has('category_id')) {
+            $categoryIds = explode(',', $request->category_id); // Chuyển chuỗi thành mảng
+            $query->whereIn('category_id', $categoryIds);
+        }
+
+        // Lọc theo tên danh mục (vẫn giữ cách cũ)
+        if ($request->has('category_name')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->category_name . '%');
+            });
+        }
+
+
+        // Lọc theo ngày hết hạn
+        if ($request->has('expiration_date')) {
+            $query->whereDate('expiration_date', '=', $request->expiration_date);
+        }
+
+        // Lọc theo khoảng giá (min - max)
+        if ($request->has('min_price')) {
+            $query->where('discounted_price', '>=', $request->min_price);
+        }
+        if ($request->has('max_price')) {
+            $query->where('discounted_price', '<=', $request->max_price);
+        }
+
+        // Lọc theo đánh giá (rating)
+        if ($request->has('rating')) {
+            $rating = (float) $request->get('rating');
+            if ($rating >= 0 && $rating <= 5) {
+                $query->where('rating', '>=', $rating);
+            } else {
+                return ApiResponse::error('Giá trị rating không hợp lệ. Vui lòng nhập số từ 0 đến 5.', 400);
+            }
+        }
+
+        // Phân trang
+        $products = $query->paginate(10);
+
+        return ApiResponse::paginate($products, "Lấy danh sách sản phẩm thành công");
     }
+
 
     public function productDetail($id)
     {
-        $product = Product::with(['store', 'category'])->findOrFail($id);
-
-        $formattedProduct = [
-            'id' => $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'image' => $product->image,
-            'original_price' => $product->original_price,
-            'discount_price' => $product->discount_price,
-            'discount_percent' => $product->discount_percent,
-            'expiration_date' => $product->expiration_date,
-            'product_type' => $product->product_type,
-            'stock_quantity' => $product->stock_quantity,
-            'store' => [
-                'id' => $product->store->id,
-                'name' => $product->store->store_name,
-                'avatar' => $product->store->avatar,
-                'store_type' => $product->store->store_type,
-                'opening_hours' => $product->store->opening_hours,
-                'status' => $product->store->status,
-                'contact_email' => $product->store->contact_email,
-                'contact_phone' => $product->store->contact_phone,
-                'latitude' => $product->store->latitude,
-                'longitude' => $product->store->longitude,
-                'description' => $product->store->description,
-            ],
-            'category' => [
-                'id' => $product->category->id,
-                'name' => $product->category->name,
-                'description' => $product->category->description,
-            ],
-        ];
-
-        return response()->json($formattedProduct);
-    }
-
-    public function getProductsByStore($storeId)
-    {
         try {
-            $store = Store::findOrFail($storeId);
-            $products = $store->products()->with(['store', 'category'])->paginate(10);
-            return response()->json($products);
+            $product = Product::with(['store', 'category'])->find($id);
+            if (!$product) {
+                return ApiResponse::error("Sản phẩm không tồn tại", [], 404);
+            }
+            return ApiResponse::success($product, "Lấy thông tin sản phẩm thành công");
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Không thể lấy danh sách sản phẩm', 'message' => $e->getMessage()], 500);
+            return ApiResponse::error("Lỗi xảy ra khi lấy sản phẩm", ['error' => $e->getMessage()], 500);
         }
     }
+
 
     public function postAddProduct(Request $request, $storeId)
     {
