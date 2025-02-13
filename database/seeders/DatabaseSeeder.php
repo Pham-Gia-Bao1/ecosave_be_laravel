@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use Database\Seeders\RolesSeeder;
 use Database\Seeders\UsersSeeder;
 use Database\Seeders\CategorySeeder;
+use Database\Seeders\ReviewSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -22,7 +23,8 @@ class DatabaseSeeder extends Seeder
             StoreSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
-            ImageSeeder::class
+            ImageSeeder::class,
+            ReviewSeeder::class
         ]);
 
     }
