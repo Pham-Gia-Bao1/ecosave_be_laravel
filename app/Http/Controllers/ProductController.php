@@ -76,7 +76,7 @@ class ProductController extends Controller
     public function productDetail($id)
     {
         try {
-            $product = Product::with(['store', 'category'])->find($id);
+            $product = Product::with(['store', 'category', 'reviews.user'])->find($id); // ✅ Thêm 'reviews'
             if (!$product) {
                 return ApiResponse::error("Sản phẩm không tồn tại", [], 404);
             }
@@ -85,6 +85,7 @@ class ProductController extends Controller
             return ApiResponse::error("Lỗi xảy ra khi lấy sản phẩm", ['error' => $e->getMessage()], 500);
         }
     }
+    
 
 
     public function postAddProduct(Request $request, $storeId)
