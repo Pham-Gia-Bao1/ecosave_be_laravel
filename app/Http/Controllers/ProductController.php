@@ -76,7 +76,7 @@ class ProductController extends Controller
     public function productDetail($id)
     {
         try {
-            $product = Product::with(['store', 'category', 'reviews.user'])->find($id); // ✅ Thêm 'reviews'
+            $product = Product::with(['store', 'category', 'reviews.user', 'images'])->find($id); // ✅ Thêm 'reviews'
             if (!$product) {
                 return ApiResponse::error("Sản phẩm không tồn tại", [], 404);
             }
