@@ -15,13 +15,16 @@ return new class extends Migration
             $table->id();
             $table->string('store_name', 255);
             $table->string('avatar', 255);
+            $table->string('logo', 255);
             $table->string('store_type', 100);
             $table->string('opening_hours', 255)->nullable();
             $table->enum('status', ['active', 'inactive', 'closed']);
             $table->string('contact_email', 255)->nullable();
             $table->string('contact_phone', 15)->nullable();
+            $table->string('address', 255)->nullable();
             $table->decimal('latitude', 9, 6)->nullable();
             $table->decimal('longitude', 9, 6)->nullable();
+            $table->text(column: 'soft_description')->nullable();
             $table->text('description')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->softDeletes();

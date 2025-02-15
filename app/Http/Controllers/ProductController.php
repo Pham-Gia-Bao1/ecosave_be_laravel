@@ -17,60 +17,63 @@ class ProductController extends Controller
     {
         $query = Product::with(['store', 'category', 'images']);
 
-        // Tìm kiếm theo tên sản phẩm
-        if ($request->has('name')) {
-            $query->where('name', 'like', '%' . $request->name . '%');
-        }
+        // Mảng điều kiện lọc
+        $filters = [
+            'store_id' => 'store_id',
+            'expiration_date' => 'expiration_date',
+            'min_price' => ['discounted_price', '>='],
+            'max_price' => ['discounted_price', '<='],
+        ];
 
-        // Lọc theo tên cửa hàng
-        if ($request->has('store_name')) {
-            $query->whereHas('store', function ($q) use ($request) {
-                $q->where('store_name', 'like', '%' . $request->store_name . '%');
-            });
-        }
-
-            // Lọc theo nhiều danh mục (nhiều category_id)
-        if ($request->has('category_id')) {
-            $categoryIds = explode(',', $request->category_id); // Chuyển chuỗi thành mảng
-            $query->whereIn('category_id', $categoryIds);
-        }
-
-        // Lọc theo tên danh mục (vẫn giữ cách cũ)
-        if ($request->has('category_name')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->category_name . '%');
-            });
-        }
-
-
-        // Lọc theo ngày hết hạn
-        if ($request->has('expiration_date')) {
-            $query->whereDate('expiration_date', '=', $request->expiration_date);
-        }
-
-        // Lọc theo khoảng giá (min - max)
-        if ($request->has('min_price')) {
-            $query->where('discounted_price', '>=', $request->min_price);
-        }
-        if ($request->has('max_price')) {
-            $query->where('discounted_price', '<=', $request->max_price);
-        }
-
-        // Lọc theo đánh giá (rating)
-        if ($request->has('rating')) {
-            $rating = (float) $request->get('rating');
-            if ($rating >= 0 && $rating <= 5) {
-                $query->where('rating', '>=', $rating);
-            } else {
-                return ApiResponse::error('Giá trị rating không hợp lệ. Vui lòng nhập số từ 0 đến 5.', 400);
+        // Áp dụng bộ lọc động
+        foreach ($filters as $param => $condition) {
+            if ($request->has($param)) {
+                if (is_array($condition)) {
+                    $query->where($condition[0], $condition[1], $request->$param);
+                } else {
+                    $query->where($condition, $request->$param);
+                }
             }
         }
+
+        // Lọc theo ID cửa hàng (nếu có)
+        $query->when($request->store_id, function ($q, $storeId) {
+            return $q->where('store_id', $storeId);
+        });
+
+        // Lọc theo tên sản phẩm
+        $query->when($request->name, function ($q, $name) {
+            return $q->where('name', 'like', "%$name%");
+        });
+
+        // Lọc theo tên cửa hàng
+        $query->when($request->store_name, function ($q, $storeName) {
+            return $q->whereHas('store', fn($store) => $store->where('store_name', 'like', "%$storeName%"));
+        });
+
+        // Lọc theo nhiều danh mục
+        $query->when($request->category_id, function ($q, $categoryIds) {
+            return $q->whereIn('category_id', explode(',', $categoryIds));
+        });
+
+        // Lọc theo tên danh mục
+        $query->when($request->category_name, function ($q, $categoryName) {
+            return $q->whereHas('category', fn($category) => $category->where('name', 'like', "%$categoryName%"));
+        });
+
+        // Lọc theo đánh giá (rating) nếu hợp lệ
+        $query->when($request->rating, function ($q, $rating) {
+            return ($rating >= 0 && $rating <= 5)
+                ? $q->where('rating', '>=', (float) $rating)
+                : ApiResponse::error('Giá trị rating không hợp lệ. Vui lòng nhập số từ 0 đến 5.', 400);
+        });
 
         // Phân trang
         $products = $query->paginate(10);
 
         return ApiResponse::paginate($products, "Lấy danh sách sản phẩm thành công");
     }
+
 
 
     public function productDetail($id)
@@ -85,7 +88,7 @@ class ProductController extends Controller
             return ApiResponse::error("Lỗi xảy ra khi lấy sản phẩm", ['error' => $e->getMessage()], 500);
         }
     }
-    
+
 
 
     public function postAddProduct(Request $request, $storeId)
@@ -211,4 +214,26 @@ class ProductController extends Controller
             return response()->json(['error' => 'Lỗi khi xóa vĩnh viễn sản phẩm!', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function getProductsByStore($storeId)
+    {
+        try {
+            $store = Store::findOrFail($storeId);
+            $products = $store->products()->with(['store', 'category'])->paginate(10);
+            return response()->json($products);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Không thể lấy danh sách sản phẩm', 'message' => $e->getMessage()], 500);
+        }
+    }
+    // public function getAllProductsByStoreId($storeId)
+    // {
+    //     try {
+    //         $store = Store::findOrFail($storeId);
+    //         $products = $store->products()->paginate(10);
+    //         return response()->json($products);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Không thể lấy danh sách sản phẩm', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
+
 }

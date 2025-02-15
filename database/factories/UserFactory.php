@@ -23,7 +23,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => bcrypt('password'), // Mật khẩu mặc định được mã hóa
             'is_active' => true,
-            'avatar' => fake()->imageUrl(100, 100, 'avatar', true, 'User Avatar'), // URL hình đại diện
+            'avatar' => "https://anhdephd.vn/wp-content/uploads/2022/02/tai-anh-avatar-dep-hinh-dai-dien-facebook.jpg", // URL hình đại diện
             'address' => fake()->address(),
             'role' => 2, // Ví dụ: role 2 là người dùng thông thường
             'phone_number' => fake()->phoneNumber(),

@@ -11,6 +11,7 @@ class ProductFactory extends Factory
 {
     protected $model = Product::class;
 
+
     public function definition()
     {
         $originalPrice = $this->faker->randomFloat(2, 10000, 500000);

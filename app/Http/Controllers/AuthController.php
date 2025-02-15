@@ -193,6 +193,7 @@ class AuthController extends Controller
              $store = Store::create([
                  'store_name' => $request->store_name,
                  'avatar' => $request->avatar ?? 'https://via.placeholder.com/200x200', // Avatar mặc định
+                 'logo' => $request->logo ?? 'https://via.placeholder.com/200x200', // Avatar mặc định
                  'store_type' => $request->store_type,
                  'opening_hours' => $request->opening_hours,
                  'status' => 'active', // Mặc định trạng thái là active
@@ -200,6 +201,8 @@ class AuthController extends Controller
                  'contact_phone' => $request->phone_number ?? null,
                  'latitude' => $request->latitude,
                  'longitude' => $request->longitude,
+                 'address' => $request->address,
+                 'soft_description' => $request->soft_description,
                  'description' => $request->description,
                  'user_id' => $user->id, // Liên kết với user vừa tạo
                  'created_at' => now(),

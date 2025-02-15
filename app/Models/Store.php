@@ -15,6 +15,7 @@ class Store extends Model
     protected $fillable = [
         'store_name',
         'avatar',
+        'logo',
         'store_type',
         'opening_hours',
         'status',
@@ -22,7 +23,9 @@ class Store extends Model
         'contact_phone',
         'latitude',
         'longitude',
+        'soft_description',
         'description',
+        'address',
         'user_id',
         'created_at',
         'updated_at',

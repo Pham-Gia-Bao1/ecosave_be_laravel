@@ -10,9 +10,24 @@ use Illuminate\Validation\ValidationException;
 class StoreController extends Controller
 {
     // Lấy danh sách tất cả cửa hàng
-    public function index()
+    public function index(Request $request)
     {
-        $stores = Store::all();
+        // Tọa độ của người dùng (có thể lấy từ request nếu cần)
+        $userLat = $request->latitude;
+        $userLng = $request->longitude;
+        $radius = 2; // Bán kính 2km
+
+        // Lấy danh sách cửa hàng trong phạm vi 2km
+        $stores = Store::selectRaw("
+            *,
+            (6371 * acos(
+                cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) +
+                sin(radians(?)) * sin(radians(latitude))
+            )) AS distance", [$userLat, $userLng, $userLat])
+            ->having("distance", "<=", $radius)
+            ->orderBy("distance", "asc")
+            ->get();
+
         return ApiResponse::success($stores, "Lấy danh sách cửa hàng thành công!");
     }
 
@@ -45,11 +60,15 @@ class StoreController extends Controller
     public function show($id)
     {
         $store = Store::find($id);
+
         if (!$store) {
             return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
         }
+
         return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
     }
+
+
 
     // Cập nhật cửa hàng
     public function update(Request $request, $id)

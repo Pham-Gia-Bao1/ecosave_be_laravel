@@ -16,6 +16,7 @@ Route::apiResource('categories', CategoryController::class);
 
 // Store Routes
 Route::apiResource('stores', StoreController::class);
+// Route::get('/stores/{storeId}/products', [ProductController::class, 'getAllProductsByStoreId']);
 
 // Khôi phục cửa hàng đã xóa
 Route::post('stores/{id}/restore', [StoreController::class, 'restore']);
