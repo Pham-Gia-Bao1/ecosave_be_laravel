@@ -57,16 +57,16 @@ class StoreController extends Controller
     }
 
     // Lấy thông tin chi tiết của một cửa hàng
-    public function show($id)
-    {
-        $store = Store::find($id);
+        public function show($id)
+        {
+            $store = Store::find($id);
 
-        if (!$store) {
-            return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
+            if (!$store) {
+                return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
+            }
+
+            return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
         }
-
-        return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
-    }
 
 
 

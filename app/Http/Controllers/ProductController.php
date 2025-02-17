@@ -69,7 +69,7 @@ class ProductController extends Controller
         });
 
         // Phân trang
-        $products = $query->paginate(10);
+        $products = $query->paginate(100);
 
         return ApiResponse::paginate($products, "Lấy danh sách sản phẩm thành công");
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StoreController;
@@ -28,6 +29,9 @@ Route::delete('stores/{id}/force-delete', [StoreController::class, 'forceDelete'
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Payment
+Route::post('/payment', [PaymentController::class, 'makePayment']);
 
 // Authenticated User Routes
 Route::group(['middleware' => 'auth:api'], function () {
