@@ -7,6 +7,8 @@ use Database\Seeders\RolesSeeder;
 use Database\Seeders\UsersSeeder;
 use Database\Seeders\CategorySeeder;
 use Database\Seeders\ReviewSeeder;
+use Database\Seeders\CartSeeder;
+use Database\Seeders\CartItemSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -24,7 +26,9 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             ImageSeeder::class,
-            ReviewSeeder::class
+            ReviewSeeder::class,
+            CartSeeder::class,
+            CartItemSeeder::class,
         ]);
 
     }

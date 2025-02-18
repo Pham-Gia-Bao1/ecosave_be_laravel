@@ -5,6 +5,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\CartController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,7 +27,7 @@ Route::post('stores/{id}/restore', [StoreController::class, 'restore']);
 Route::delete('stores/{id}/force-delete', [StoreController::class, 'forceDelete']);
 
 // User Routes (Protected by Sanctum Authentication)
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+Route::middleware('auconfig/auth.phpsanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
@@ -36,6 +37,8 @@ Route::post('/payment', [PaymentController::class, 'makePayment']);
 // Authenticated User Routes
 Route::group(['middleware' => 'auth:api'], function () {
     Route::get('/users', [UserController::class, 'index']);
+    Route::get('/cart', [CartController::class, 'getCart']);
+    Route::post('/cart/add', [CartController::class, 'addToCart']);
 });
 
 // Store Products Routes (Authenticated)
@@ -51,3 +54,4 @@ Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api
 
 // Authentication Routes
 require __DIR__ . '/auth.php';
+
