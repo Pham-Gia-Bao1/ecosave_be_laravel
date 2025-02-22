@@ -9,6 +9,19 @@ use Illuminate\Validation\ValidationException;
 
 class CategoryController extends Controller
 {
+    public function getCategory()
+    {
+        try {
+            $categories = Category::select('id', 'name')->get();
+            return response()->json($categories);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Không thể lấy danh sách danh mục',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Lấy danh sách tất cả các danh mục
     public function index()
     {

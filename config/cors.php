@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'api/csrf-token'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'api/csrf-token', 'storage/*'],
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'http://localhost:3000',  // or your Next.js app URL

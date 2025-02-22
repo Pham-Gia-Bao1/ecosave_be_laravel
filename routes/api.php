@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ImageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -54,7 +55,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 });
 
 // Store Products Routes (Authenticated)
-Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api'], function () {
+Route::group(['prefix' => 'stores/products', 'middleware' => 'auth:api'], function () {
     Route::get('/', [ProductController::class, 'getProductsByStore']);
     Route::post('/', [ProductController::class, 'postAddProduct']);
     Route::get('/{productId}', [ProductController::class, 'getProductByStore']);
@@ -63,6 +64,10 @@ Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api
     Route::post('/{productId}/restore', [ProductController::class, 'restoreProduct']);
     Route::delete('/{productId}/force-delete', [ProductController::class, 'forceDeleteProduct']);
 });
+
+Route::post('/upload-image', [ImageController::class, 'upload']);
+Route::get('/categories', [CategoryController::class, 'getCategory']);
+
 
 // Authentication Routes
 require __DIR__ . '/auth.php';
