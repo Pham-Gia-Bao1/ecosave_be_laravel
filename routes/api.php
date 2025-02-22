@@ -48,6 +48,9 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/cart', [CartController::class, 'getCart']);
     Route::post('/cart/add', [CartController::class, 'addToCart']);
+    Route::get('/cart/{storeId}', [CartController::class, 'getCartDetail']); 
+    Route::delete('/cart/remove-item', [CartController::class, 'removeItem']);
+    Route::put('/cart/update-quantity', [CartController::class, 'updateItemQuantity']);
 });
 
 // Store Products Routes (Authenticated)

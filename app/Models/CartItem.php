@@ -11,18 +11,15 @@ class CartItem extends Model
 
     protected $fillable = ['cart_id', 'product_id', 'quantity'];
 
+    // CartItem thuộc về một giỏ hàng
     public function cart()
     {
         return $this->belongsTo(Cart::class);
     }
 
+    // CartItem có một sản phẩm
     public function product()
     {
         return $this->belongsTo(Product::class);
-    }
-
-    public function store()
-    {
-        return $this->belongsTo(User::class);
     }
 }

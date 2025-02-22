@@ -11,11 +11,13 @@ class Cart extends Model
 
     protected $fillable = ['user_id'];
 
-    public function store()
+    // Giỏ hàng thuộc về một user
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    // Giỏ hàng có nhiều CartItem
     public function cartItems()
     {
         return $this->hasMany(CartItem::class);
