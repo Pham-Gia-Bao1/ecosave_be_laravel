@@ -23,7 +23,7 @@ class PaymentController extends Controller
             // Determine the return URL based on the environment
             $vnp_Returnurl = env('APP_ENV') === 'production'
                 ? env('PRODUCTION_RETURN_URL')
-                : env('FRONTEND_URL');
+                : env('FRONTEND_URL_RRETURN_AFTER_PAYMENT');
 
             $vnp_TmnCode = "V1O3H94J"; // Mã website tại VNPAY
             $vnp_HashSecret = "ORWNNIISEYIOYFPCVQGSPKGCIACSEPPP"; // Chuỗi bí mật

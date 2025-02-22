@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProductController;
@@ -31,11 +32,19 @@ Route::middleware('auconfig/auth.phpsanctum')->get('/user', function (Request $r
     return $request->user();
 });
 
+
 // Payment
-Route::post('/payment', [PaymentController::class, 'makePayment']);
 
 // Authenticated User Routes
 Route::group(['middleware' => 'auth:api'], function () {
+    Route::post('/payment', [PaymentController::class, 'makePayment']);
+    Route::apiResource('/orders', OrderController::class);
+    // Kiểm tra API bằng Postman hoặc Laravel Artisan
+    // Lấy danh sách đơn hàng: GET /api/orders
+    // Lấy đơn hàng cụ thể: GET /api/orders/{id}
+    // Tạo đơn hàng: POST /api/orders
+    // Cập nhật đơn hàng: PUT /api/orders/{id}
+    // Xóa đơn hàng: DELETE /api/orders/{id}
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/cart', [CartController::class, 'getCart']);
     Route::post('/cart/add', [CartController::class, 'addToCart']);
@@ -54,4 +63,3 @@ Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api
 
 // Authentication Routes
 require __DIR__ . '/auth.php';
-
