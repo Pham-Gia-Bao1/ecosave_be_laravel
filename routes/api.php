@@ -49,7 +49,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/cart', [CartController::class, 'getCart']);
     Route::post('/cart/add', [CartController::class, 'addToCart']);
-    Route::get('/cart/{storeId}', [CartController::class, 'getCartDetail']); 
+    Route::get('/cart/{storeId}', [CartController::class, 'getCartDetail']);
     Route::delete('/cart/remove-item', [CartController::class, 'removeItem']);
     Route::put('/cart/update-quantity', [CartController::class, 'updateItemQuantity']);
 });
@@ -66,8 +66,8 @@ Route::group(['prefix' => 'stores/products', 'middleware' => 'auth:api'], functi
 });
 
 Route::post('/upload-image', [ImageController::class, 'upload']);
-Route::get('/categories', [CategoryController::class, 'getCategory']);
-
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categoriesByNameAndId', [CategoryController::class, 'getCategoryByNameAndId']);
 
 // Authentication Routes
 require __DIR__ . '/auth.php';

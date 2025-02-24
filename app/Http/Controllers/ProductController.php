@@ -78,41 +78,18 @@ class ProductController extends Controller
 
     public function productDetail($id)
     {
-        $product = Product::with(['store', 'category'])->findOrFail($id);
-
-        $formattedProduct = [
-            'id' => $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'image' => $product->image,
-            'original_price' => $product->original_price,
-            'discount_price' => $product->discount_price,
-            'discount_percent' => $product->discount_percent,
-            'expiration_date' => $product->expiration_date,
-            'product_type' => $product->product_type,
-            'stock_quantity' => $product->stock_quantity,
-            'store' => [
-                'id' => $product->store->id,
-                'name' => $product->store->store_name,
-                'avatar' => $product->store->avatar,
-                'store_type' => $product->store->store_type,
-                'opening_hours' => $product->store->opening_hours,
-                'status' => $product->store->status,
-                'contact_email' => $product->store->contact_email,
-                'contact_phone' => $product->store->contact_phone,
-                'latitude' => $product->store->latitude,
-                'longitude' => $product->store->longitude,
-                'description' => $product->store->description,
-            ],
-            'category' => [
-                'id' => $product->category->id,
-                'name' => $product->category->name,
-                'description' => $product->category->description,
-            ],
-        ];
-
-        return response()->json($formattedProduct);
+        try {
+            $product = Product::with(['store', 'category', 'reviews.user', 'images'])->find($id); // ✅ Thêm 'reviews'
+            if (!$product) {
+                return ApiResponse::error("Sản phẩm không tồn tại", [], 404);
+            }
+            return ApiResponse::success($product, "Lấy thông tin sản phẩm thành công");
+        } catch (\Exception $e) {
+            return ApiResponse::error("Lỗi xảy ra khi lấy sản phẩm", ['error' => $e->getMessage()], 500);
+        }
     }
+
+
 
     private function getUserStore()
     {
@@ -215,7 +192,7 @@ class ProductController extends Controller
 
             $product->load(['store', 'category', 'images']);
             return response()->json([
-                'message' => 'Sản phẩm đã được thêm!', 
+                'message' => 'Sản phẩm đã được thêm!',
                 'product' => $this->formatProduct($product)
             ], 201);
         } catch (\Exception $e) {
@@ -230,7 +207,7 @@ class ProductController extends Controller
             $product = Product::with(['store', 'category', 'images'])
                 ->where('store_id', $store->id)
                 ->findOrFail($productId);
-            
+
             return response()->json($this->formatProduct($product));
         } catch (\Exception $e) {
             return response()->json(['error' => 'Không thể lấy sản phẩm', 'message' => $e->getMessage()], 500);
@@ -265,7 +242,7 @@ class ProductController extends Controller
             if ($request->has('images')) {
                 // Delete existing images
                 $product->images()->delete();
-                
+
                 // Add new images
                 foreach ($request->images as $image) {
                     $product->images()->create([
@@ -277,7 +254,7 @@ class ProductController extends Controller
 
             $product->load(['store', 'category', 'images']);
             return response()->json([
-                'message' => 'Sản phẩm đã được cập nhật!', 
+                'message' => 'Sản phẩm đã được cập nhật!',
                 'product' => $this->formatProduct($product)
             ]);
         } catch (\Exception $e) {
@@ -333,10 +310,10 @@ class ProductController extends Controller
                 ->where('store_id', $store->id)
                 ->findOrFail($productId);
             $product->restore();
-            
+
             $product->load(['store', 'category', 'images']);
             return response()->json([
-                'message' => 'Sản phẩm đã được khôi phục!', 
+                'message' => 'Sản phẩm đã được khôi phục!',
                 'product' => $this->formatProduct($product)
             ]);
         } catch (\Exception $e) {
@@ -351,13 +328,13 @@ class ProductController extends Controller
             $product = Product::onlyTrashed()
                 ->where('store_id', $store->id)
                 ->findOrFail($productId);
-            
+
             // Delete associated images first
             $product->images()->delete();
-            
+
             // Then force delete the product
             $product->forceDelete();
-            
+
             return response()->json(['message' => 'Sản phẩm đã được xóa vĩnh viễn!']);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Lỗi khi xóa vĩnh viễn sản phẩm!', 'message' => $e->getMessage()], 500);

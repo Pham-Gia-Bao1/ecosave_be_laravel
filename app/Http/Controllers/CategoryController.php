@@ -9,16 +9,13 @@ use Illuminate\Validation\ValidationException;
 
 class CategoryController extends Controller
 {
-    public function getCategory()
+    public function getCategoryByNameAndId()
     {
         try {
             $categories = Category::select('id', 'name')->get();
-            return response()->json($categories);
+            return ApiResponse::success($categories, "Lấy danh sánh loại sản phẩm thành công");
         } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Không thể lấy danh sách danh mục',
-                'message' => $e->getMessage()
-            ], 500);
+            return ApiResponse::error($e->errors(), "Loại sản phẩm không tồn tại!", 422);
         }
     }
 
