@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ProductCreated;
 use App\Helpers\ApiResponse;
 use App\Models\Product;
 use App\Models\User;
@@ -9,7 +10,6 @@ use App\Models\Store;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -152,53 +152,60 @@ class ProductController extends Controller
         }
     }
 
-    public function postAddProduct(Request $request)
-    {
-        try {
-            $store = $this->getUserStore();
-            if (!$store) {
-                return response()->json(['message' => 'Bạn không có quyền thêm sản phẩm vào cửa hàng này'], 403);
-            }
 
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'nullable|string',
-                'original_price' => 'required|numeric|min:0',
-                'discount_percent' => 'required|integer|min:0|max:100',
-                'product_type' => 'required|string|max:255',
-                'discounted_price' => 'nullable|numeric|min:0',
-                'expiration_date' => 'nullable|date',
-                'stock_quantity' => 'required|integer|min:0',
-                'category_id' => 'required|exists:categories,id',
-                'images' => 'nullable|array',
-                'images.*.image_url' => 'required|string',
-                'images.*.image_order' => 'required|integer|min:0'
-            ]);
-
-            $productData = $request->except('images');
-            $productData['store_id'] = $store->id;
-
-            $product = Product::create($productData);
-
-            // Handle images if provided
-            if ($request->has('images')) {
-                foreach ($request->images as $image) {
-                    $product->images()->create([
-                        'image_url' => $image['image_url'],
-                        'image_order' => $image['image_order']
-                    ]);
-                }
-            }
-
-            $product->load(['store', 'category', 'images']);
-            return response()->json([
-                'message' => 'Sản phẩm đã được thêm!',
-                'product' => $this->formatProduct($product)
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Lỗi khi thêm sản phẩm!', 'message' => $e->getMessage()], 500);
+public function postAddProduct(Request $request)
+{
+    try {
+        $store = $this->getUserStore();
+        if (!$store) {
+            return response()->json(['message' => 'Bạn không có quyền thêm sản phẩm vào cửa hàng này'], 403);
         }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'original_price' => 'required|numeric|min:0',
+            'discount_percent' => 'required|integer|min:0|max:100',
+            'product_type' => 'required|string|max:255',
+            'discounted_price' => 'nullable|numeric|min:0',
+            'expiration_date' => 'nullable|date',
+            'stock_quantity' => 'required|integer|min:0',
+            'category_id' => 'required|exists:categories,id',
+            'images' => 'nullable|array',
+            'images.*.image_url' => 'required|string',
+            'images.*.image_order' => 'required|integer|min:0'
+        ]);
+
+        $productData = $request->except('images');
+        $productData['store_id'] = $store->id;
+
+        $product = Product::create($productData);
+
+        // Handle images if provided
+        if ($request->has('images')) {
+            foreach ($request->images as $image) {
+                $product->images()->create([
+                    'image_url' => $image['image_url'],
+                    'image_order' => $image['image_order']
+                ]);
+            }
+        }
+
+        $product->load(['store', 'category', 'images']);
+
+        // Real-time event
+        event(new ProductCreated($product));
+
+        return response()->json([
+            'message' => 'Sản phẩm đã được thêm!',
+            'product' => $this->formatProduct($product)
+        ], 201);
+    } catch (\Exception $e) {
+
+        return response()->json(['error' => 'Lỗi khi thêm sản phẩm!', 'message' => $e->getMessage()], 500);
     }
+}
+
 
     public function getProductByStore($productId)
     {
