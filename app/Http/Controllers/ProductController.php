@@ -188,8 +188,14 @@ class ProductController extends Controller
             }
         }
 
+        $product->load(['store', 'category', 'images']);
+
         event(new ProductCreated($product));
-        return ApiResponse::success($product, "Sản phẩm đã được thêm thành công", 201);
+        return response()->json([
+            'message' => 'Sản phẩm đã được thêm!',
+            'product' => $this->formatProduct($product)
+        ], 201);
+
     }
 
     public function getProductByStore($productId)

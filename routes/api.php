@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\SaveProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +53,9 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('/cart/{storeId}', [CartController::class, 'getCartDetail']);
     Route::delete('/cart/remove-item', [CartController::class, 'removeItem']);
     Route::put('/cart/update-quantity', [CartController::class, 'updateItemQuantity']);
+    // product after scaned
+    Route::get('/save-products', [SaveProductController::class, 'getSaveProductsByUser']);
+    Route::post('/save-products', [SaveProductController::class, 'storeSaveProduct']);
 });
 
 // Store Products Routes (Authenticated)
