@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Store;
+use Illuminate\Support\Facades\Auth;
 use App\Helpers\ApiResponse;
 use App\Helpers\ApiErrorHandler;
-use App\Models\Order;
-use Illuminate\Http\Request;
 use Exception;
 
 class OrderController extends Controller
@@ -112,5 +115,69 @@ class OrderController extends Controller
         } catch (Exception $e) {
             return ApiErrorHandler::serverError("Lỗi khi xóa đơn hàng.");
         }
+    }
+
+    private $storeId;
+
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+
+            if ($user && $user->role === 3) {
+                $store = Store::where('user_id', $user->id)->first();
+
+                $this->storeId = $store ? $store->id : null;
+            } else {
+                $this->storeId = null;
+            }
+
+            return $next($request);
+        });
+    }
+
+    public function getOrdersByStore()
+    {
+        if (!$this->storeId) {
+            return ApiResponse::error("Bạn không có quyền truy cập", [], 403);
+        }
+
+        $orders = Order::where('store_id', $this->storeId)
+            ->with(['user', 'orderItems.product'])
+            ->paginate(10);
+
+        return ApiResponse::success($orders, "Lấy danh sách đơn hàng thành công");
+    }
+
+    private function formatOrder($order)
+    {
+        return [
+            'id' => $order->id,
+            'user' => [
+                'id' => $order->user->id,
+                'name' => $order->user->name,
+                'email' => $order->user->email,
+            ],
+            'total_price' => $order->total_price,
+            'status' => $order->status,
+            'order_date' => $order->order_date,
+            'order_code' => $order->order_code,
+            'created_at' => $order->created_at,
+            'updated_at' => $order->updated_at,
+            'order_items' => $order->orderItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'product' => [
+                        'id' => $item->product->id,
+                        'name' => $item->product->name,
+                        'price' => $item->product->discounted_price ?? $item->product->original_price,
+                    ],
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'created_at' => $item->created_at,
+                    'updated_at' => $item->updated_at,
+                ];
+            }),
+        ];
     }
 }
