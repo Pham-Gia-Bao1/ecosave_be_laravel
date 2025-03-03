@@ -19,7 +19,7 @@ class ReviewFactory extends Factory
             
         return [
             'user_id' => $user->id,
-            'product_id' => Product::factory(),
+            'product_id' => Product::inRandomOrder()->value('id'),
             'rating' => $this->faker->numberBetween(1, 5),
             'review_content' => $this->faker->randomElement([
                 "Chất lượng khá ổn, hương vị dễ chịu, không quá ngọt hay quá mặn. Rất phù hợp cho bữa ăn hàng ngày.",

@@ -90,25 +90,36 @@ class ProductController extends Controller
     private $storeId;
 
     public function __construct()
-{
-    $this->middleware(function ($request, $next) {
+    {
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+
+            if ($user && $user->role === 3) {
+                $store = Store::where('user_id', $user->id)->first();
+
+                $this->storeId = $store ? $store->id : null;
+            } else {
+                $this->storeId = null;
+            }
+
+            return $next($request);
+        });
+    }
+
+    public function getStoreId()
+    {
         $user = Auth::user();
-        \Log::info('User:', ['user' => $user]);
-
-        if ($user && $user->role === 3) {
-            $store = Store::where('user_id', $user->id)->first();
-            \Log::info('Store:', ['store' => $store]);
-
-            $this->storeId = $store ? $store->id : null;
-        } else {
-            $this->storeId = null;
+        if (!$user) {
+            return ApiResponse::error("Người dùng chưa đăng nhập", [], 401);
         }
 
-        \Log::info('Store ID:', ['storeId' => $this->storeId]);
+        $store = Store::where('user_id', $user->id)->first();
+        if (!$store) {
+            return ApiResponse::error("Người dùng không có cửa hàng", [], 404);
+        }
 
-        return $next($request);
-    });
-}
+        return ApiResponse::success(['storeId' => $store->id], "Lấy storeId thành công");
+    }
 
     private function formatProduct($product)
     {
@@ -139,22 +150,18 @@ class ProductController extends Controller
     }
 
     public function getProductsByStoreName()
-{
-    \Log::info('Store ID in getProductsByStoreName:', ['storeId' => $this->storeId]);
+    {
 
-    if (!$this->storeId) {
-        \Log::error('Store ID is null or invalid.');
-        return ApiResponse::error("Bạn không có quyền truy cập", [], 403);
+        if (!$this->storeId) {
+            return ApiResponse::error("Bạn không có quyền truy cập", [], 403);
+        }
+
+        $products = Product::where('store_id', $this->storeId)
+            ->with(['store', 'category', 'images'])
+            ->paginate(10);
+
+        return ApiResponse::success($products, "Lấy danh sách sản phẩm thành công");
     }
-
-    $products = Product::where('store_id', $this->storeId)
-        ->with(['store', 'category', 'images'])
-        ->paginate(10);
-
-    \Log::info('Products found:', ['products' => $products]);
-
-    return ApiResponse::success($products, "Lấy danh sách sản phẩm thành công");
-}
 
     public function postAddProduct(Request $request)
     {
@@ -195,7 +202,6 @@ class ProductController extends Controller
             'message' => 'Sản phẩm đã được thêm!',
             'product' => $this->formatProduct($product)
         ], 201);
-
     }
 
     public function getProductByStore($productId)
@@ -204,7 +210,13 @@ class ProductController extends Controller
             return ApiResponse::error("Bạn không có quyền truy cập sản phẩm này", [], 403);
         }
 
-        $product = Product::where('store_id', $this->storeId)->with(['store', 'category', 'images'])->findOrFail($productId);
+        $product = Product::where('store_id', $this->storeId)
+            ->with(['store', 'category', 'images'])
+            ->find($productId);
+
+        if (!$product) {
+            return ApiResponse::error("Sản phẩm không tồn tại hoặc không thuộc về cửa hàng này", [], 404);
+        }
 
         return ApiResponse::success($product, "Lấy thông tin sản phẩm thành công");
     }
@@ -215,8 +227,14 @@ class ProductController extends Controller
             return ApiResponse::error("Bạn không có quyền cập nhật sản phẩm này", [], 403);
         }
 
-        $product = Product::where('store_id', $this->storeId)->findOrFail($productId);
+        $product = Product::where('store_id', $this->storeId)
+            ->find($productId);
 
+        if (!$product) {
+            return ApiResponse::error("Sản phẩm không tồn tại hoặc không thuộc về cửa hàng này", [], 404);
+        }
+
+        // Validate và cập nhật sản phẩm
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -250,7 +268,13 @@ class ProductController extends Controller
             return ApiResponse::error("Bạn không có quyền xóa sản phẩm này", [], 403);
         }
 
-        $product = Product::where('store_id', $this->storeId)->findOrFail($productId);
+        $product = Product::where('store_id', $this->storeId)
+            ->find($productId);
+
+        if (!$product) {
+            return ApiResponse::error("Sản phẩm không tồn tại hoặc không thuộc về cửa hàng này", [], 404);
+        }
+
         $product->delete();
 
         return ApiResponse::success(null, "Sản phẩm đã được xóa thành công");
@@ -280,7 +304,14 @@ class ProductController extends Controller
             return ApiResponse::error("Bạn không có quyền khôi phục sản phẩm này", [], 403);
         }
 
-        $product = Product::onlyTrashed()->where('store_id', $this->storeId)->findOrFail($productId);
+        $product = Product::onlyTrashed()
+            ->where('store_id', $this->storeId)
+            ->find($productId);
+
+        if (!$product) {
+            return ApiResponse::error("Sản phẩm không tồn tại hoặc không thuộc về cửa hàng này", [], 404);
+        }
+
         $product->restore();
 
         return ApiResponse::success($product, "Sản phẩm đã được khôi phục thành công");
@@ -292,7 +323,14 @@ class ProductController extends Controller
             return ApiResponse::error("Bạn không có quyền xóa vĩnh viễn sản phẩm này", [], 403);
         }
 
-        $product = Product::onlyTrashed()->where('store_id', $this->storeId)->findOrFail($productId);
+        $product = Product::onlyTrashed()
+            ->where('store_id', $this->storeId)
+            ->find($productId);
+
+        if (!$product) {
+            return ApiResponse::error("Sản phẩm không tồn tại hoặc không thuộc về cửa hàng này", [], 404);
+        }
+
         $product->images()->delete();
         $product->forceDelete();
 

@@ -28,6 +28,10 @@ return new class extends Migration
             $table->decimal('rating', 2, 1)->default(0); // Thêm cột rating
             $table->softDeletes();
             $table->timestamps();
+            $table->string('origin')->nullable(); // Xuất xứ
+            $table->text('ingredients')->nullable(); // Thành phần
+            $table->text('usage_instructions')->nullable(); // Hướng dẫn sử dụng
+            $table->text('storage_instructions')->nullable(); // Bảo quản
         });
     }
 
