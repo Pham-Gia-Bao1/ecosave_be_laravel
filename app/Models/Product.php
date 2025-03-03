@@ -10,6 +10,20 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // protected $fillable = [
+    //     'name',
+    //     'description',
+    //     'original_price',
+    //     'discount_price',
+    //     'discount_percent',
+    //     'expiration_date',
+    //     'product_type',
+    //     'stock_quantity',
+    //     'store_id',
+    //     'category_id',
+    //     'rating'
+    // ];
+
     protected $fillable = [
         'name',
         'description',
@@ -21,7 +35,11 @@ class Product extends Model
         'stock_quantity',
         'store_id',
         'category_id',
-        'rating'
+        'rating',
+        'origin', //nguồn gốc
+        'ingredients', 
+        'usage_instructions', // Hướng dẫn sử dụng
+        'storage_instructions' // Bảo quản
     ];
 
     protected $dates = ['deleted_at'];

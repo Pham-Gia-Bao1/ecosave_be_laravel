@@ -17,7 +17,7 @@ class CartItemFactory extends Factory
     {
         return [
             'cart_id' => Cart::inRandomOrder()->first()->id ?? Cart::factory(),
-            'product_id' => Product::inRandomOrder()->first()->id ?? Product::factory(),
+            'product_id' => Product::inRandomOrder()->value('id'),
             'quantity' => $this->faker->numberBetween(1, 5),
             'created_at' => now(),
             'updated_at' => now(),
