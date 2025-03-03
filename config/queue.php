@@ -14,6 +14,7 @@ return [
     */
 
     'default' => env('QUEUE_CONNECTION', 'redis'),
+
     /*
     |--------------------------------------------------------------------------
     | Queue Connections
