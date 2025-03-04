@@ -72,6 +72,9 @@ Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api
     Route::delete('/{productId}', [ProductController::class, 'deleteProduct']);
 });
 
+Route::group(['prefix' => 'stores/{storeId}/orders', 'middleware' => 'auth:api'], function () {
+    Route::get('/', [OrderController::class, 'getOrdersByStore']);
+});
 
 Route::post('/upload-image', [ImageController::class, 'upload']);
 Route::get('/categories', [CategoryController::class, 'index']);
