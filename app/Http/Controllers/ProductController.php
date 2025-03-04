@@ -87,23 +87,28 @@ class ProductController extends Controller
         }
     }
 
-    private $storeId;
-
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            $user = Auth::user();
+        $this->middleware('auth:api')->except(['index', 'productDetail']);
+    }
 
-            if ($user && $user->role === 3) {
-                $store = Store::where('user_id', $user->id)->first();
-
-                $this->storeId = $store ? $store->id : null;
-            } else {
-                $this->storeId = null;
-            }
-
-            return $next($request);
-        });
+    private function checkStoreAccess($storeId)
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return false;
+        }
+        
+        if ($user->role === 3) {
+            $store = Store::where('id', $storeId)
+                ->where('user_id', $user->id)
+                ->first();
+                
+            return $store ? true : false;
+        }
+        
+        return false;
     }
 
     public function getStoreId()
@@ -149,23 +154,22 @@ class ProductController extends Controller
         ];
     }
 
-    public function getProductsByStoreName()
+    public function getProductsByStoreName($storeId)
     {
-
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền truy cập", [], 403);
         }
 
-        $products = Product::where('store_id', $this->storeId)
+        $products = Product::where('store_id', $storeId)
             ->with(['store', 'category', 'images'])
             ->paginate(10);
 
         return ApiResponse::success($products, "Lấy danh sách sản phẩm thành công");
     }
 
-    public function postAddProduct(Request $request)
+    public function postAddProduct(Request $request, $storeId)
     {
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền thêm sản phẩm", [], 403);
         }
 
@@ -185,7 +189,7 @@ class ProductController extends Controller
         ]);
 
         $productData = $request->all();
-        $productData['store_id'] = $this->storeId;
+        $productData['store_id'] = $storeId;
 
         $product = Product::create($productData);
 
@@ -204,13 +208,13 @@ class ProductController extends Controller
         ], 201);
     }
 
-    public function getProductByStore($productId)
+    public function getProductByStore($storeId, $productId)
     {
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền truy cập sản phẩm này", [], 403);
         }
 
-        $product = Product::where('store_id', $this->storeId)
+        $product = Product::where('store_id', $storeId)
             ->with(['store', 'category', 'images'])
             ->find($productId);
 
@@ -221,13 +225,13 @@ class ProductController extends Controller
         return ApiResponse::success($product, "Lấy thông tin sản phẩm thành công");
     }
 
-    public function putUpdateProduct(Request $request, $productId)
+    public function putUpdateProduct(Request $request, $storeId, $productId)
     {
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền cập nhật sản phẩm này", [], 403);
         }
 
-        $product = Product::where('store_id', $this->storeId)
+        $product = Product::where('store_id', $storeId)
             ->find($productId);
 
         if (!$product) {
@@ -262,13 +266,13 @@ class ProductController extends Controller
         return ApiResponse::success($product, "Sản phẩm đã được cập nhật thành công");
     }
 
-    public function deleteProduct($productId)
+    public function deleteProduct($storeId, $productId)
     {
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền xóa sản phẩm này", [], 403);
         }
 
-        $product = Product::where('store_id', $this->storeId)
+        $product = Product::where('store_id', $storeId)
             ->find($productId);
 
         if (!$product) {
@@ -280,15 +284,15 @@ class ProductController extends Controller
         return ApiResponse::success(null, "Sản phẩm đã được xóa thành công");
     }
 
-    public function getTrashedProductsByStore()
+    public function getTrashedProductsByStore($storeId)
     {
         try {
-            if (!$this->storeId) {
+            if (!$this->checkStoreAccess($storeId)) {
                 return ApiResponse::error("Bạn không có quyền truy cập cửa hàng này", [], 403);
             }
 
             $products = Product::onlyTrashed()
-                ->where('store_id', $this->storeId)
+                ->where('store_id', $storeId)
                 ->with(['store', 'category', 'images'])
                 ->paginate(10);
 
@@ -298,14 +302,14 @@ class ProductController extends Controller
         }
     }
 
-    public function restoreProduct($productId)
+    public function restoreProduct($storeId, $productId)
     {
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền khôi phục sản phẩm này", [], 403);
         }
 
         $product = Product::onlyTrashed()
-            ->where('store_id', $this->storeId)
+            ->where('store_id', $storeId)
             ->find($productId);
 
         if (!$product) {
@@ -317,14 +321,14 @@ class ProductController extends Controller
         return ApiResponse::success($product, "Sản phẩm đã được khôi phục thành công");
     }
 
-    public function forceDeleteProduct($productId)
+    public function forceDeleteProduct($storeId, $productId)
     {
-        if (!$this->storeId) {
+        if (!$this->checkStoreAccess($storeId)) {
             return ApiResponse::error("Bạn không có quyền xóa vĩnh viễn sản phẩm này", [], 403);
         }
 
         $product = Product::onlyTrashed()
-            ->where('store_id', $this->storeId)
+            ->where('store_id', $storeId)
             ->find($productId);
 
         if (!$product) {

@@ -11,6 +11,7 @@ use App\Http\Controllers\ImageController;
 use App\Http\Controllers\SaveProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\OrderItemController;
 
 // Product Routes
 Route::get('/products', [ProductController::class, 'index']);
@@ -41,6 +42,7 @@ Route::middleware('auconfig/auth.phpsanctum')->get('/user', function (Request $r
 Route::group(['middleware' => 'auth:api'], function () {
     Route::post('/payment', [PaymentController::class, 'makePayment']);
     Route::apiResource('/orders', OrderController::class);
+    Route::post('/order-items', [OrderItemController::class, 'store']);
     // Kiểm tra API bằng Postman hoặc Laravel Artisan
     // Lấy danh sách đơn hàng: GET /api/orders
     // Lấy đơn hàng cụ thể: GET /api/orders/{id}
@@ -56,6 +58,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     // product after scaned
     Route::get('/save-products', [SaveProductController::class, 'getSaveProductsByUser']);
     Route::post('/save-products', [SaveProductController::class, 'storeSaveProduct']);
+    Route::post('/check-product-exists', [SaveProductController::class, 'checkProductExists']);
 });
 
 // Store Products Routes (Authenticated)

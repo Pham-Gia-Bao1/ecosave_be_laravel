@@ -65,4 +65,30 @@ class SaveProductController extends Controller
             return ApiResponse::error("Lỗi xảy ra khi thêm sản phẩm", ['error' => $e->getMessage()], 500);
         }
     }
+    public function checkProductExists(Request $request)
+{
+    try {
+        // Validate request
+        $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'code' => 'required|string',
+        ]);
+
+        // Kiểm tra xem mã code có tồn tại không
+        $exists = SaveProduct::where('user_id', $request->user_id)
+            ->where('code', $request->code)
+            ->exists();
+
+        return response()->json([
+            'success' => true,
+            'exists' => $exists,
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => "Đã xảy ra lỗi: " . $e->getMessage(),
+        ], 500);
+    }
+}
+
 }
