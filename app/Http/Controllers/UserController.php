@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -84,19 +85,19 @@ class UserController extends Controller
         ], 200);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        $user = User::find($id);
-        if (empty($user)) {
+        $user = Auth::user();
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'User ID not found',
+                'message' => 'User not found',
             ], 404);
         }
 
         $validator = Validator::make($request->all(), [
             'username' => 'nullable|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $id,
+            'email' => 'nullable|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6',
             'role' => 'nullable|string',
             'phone_number' => 'nullable|string',
@@ -108,9 +109,13 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors()->toJson(), 400);
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 400);
         }
 
+        // Cập nhật thông tin user
         $user->update([
             'username' => $request->username ?? $user->username,
             'email' => $request->email ?? $user->email,
@@ -130,4 +135,5 @@ class UserController extends Controller
             'data' => $user,
         ], 200);
     }
+
 }
