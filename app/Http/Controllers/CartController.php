@@ -94,56 +94,77 @@ class CartController extends Controller
 
     public function addToCart(Request $request)
     {
+        // Kiểm tra xác thực người dùng
         if (!Auth::check()) {
-            return response()->json(['error' => 'User not authenticated.'], 401);
+            return response()->json([
+                'error' => 'Người dùng chưa đăng nhập.',
+            ], 401);
         }
-    
+
+        // Validate dữ liệu đầu vào
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-    
+
         $user_id = Auth::id();
         $product = Product::find($request->product_id);
 
+        // Kiểm tra sản phẩm tồn tại
         if (!$product) {
-            return response()->json(['error' => 'Product not found.'], 404);
-        }
-
-        if ($product->stock_quantity < $request->quantity) {
-            return response()->json(['error' => 'This product is out of stock.'], 400);
+            return response()->json([
+                'error' => 'Sản phẩm không tồn tại.',
+            ], 404);
         }
 
         // Lấy hoặc tạo giỏ hàng
         $cart = Cart::firstOrCreate(['user_id' => $user_id]);
-    
-        // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
-        $cartItem = CartItem::where('cart_id', $cart->id)
-                            ->where('product_id', $request->product_id)
-                            ->first();
-    
-        if ($cartItem) {
-            // Cập nhật số lượng sản phẩm trong giỏ hàng
-            $cartItem->quantity += $request->quantity;
-            $cartItem->save();
+
+        // Kiểm tra số lượng sản phẩm trong giỏ hàng hiện tại
+        $existingCartItem = CartItem::where('cart_id', $cart->id)
+            ->where('product_id', $request->product_id)
+            ->first();
+
+        // Tính toán tổng số lượng sản phẩm sẽ có trong giỏ hàng
+        $totalRequestedQuantity = $request->quantity;
+        if ($existingCartItem) {
+            $totalRequestedQuantity += $existingCartItem->quantity;
+        }
+
+        // Kiểm tra số lượng tồn kho
+        if ($totalRequestedQuantity > $product->stock_quantity) {
+            // Tính toán số lượng tối đa có thể thêm
+            $maxAddableQuantity = $product->stock_quantity - 
+                ($existingCartItem ? $existingCartItem->quantity : 0);
+
+            return response()->json([
+                'error' => 'Hiện tại bạn chỉ có thêm tối đa '. ($product->stock_quantity) . ' sản phẩm này vào giỏ hàng.',
+                'maxAddableQuantity' => $maxAddableQuantity,
+                'currentStock' => $product->stock_quantity
+            ], 400);
+        }
+
+        // Cập nhật hoặc tạo mới sản phẩm trong giỏ hàng
+        if ($existingCartItem) {
+            $existingCartItem->quantity += $request->quantity;
+            $existingCartItem->save();
         } else {
-            // Tạo mới sản phẩm trong giỏ hàng
             CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $request->product_id,
                 'quantity' => $request->quantity,
             ]);
         }
-        
+
         // Cập nhật tổng số sản phẩm trong giỏ hàng
         $totalItems = CartItem::where('cart_id', $cart->id)->sum('quantity');
 
         return response()->json([
-            'message' => 'Product added to cart successfully.',
+            'message' => 'Thêm sản phẩm vào giỏ hàng thành công.',
             'total_items' => $totalItems,
         ], 200);
     }
-    
+
     public function getCartDetail(Request $request, $storeId)
     {
         if (!Auth::check()) {
