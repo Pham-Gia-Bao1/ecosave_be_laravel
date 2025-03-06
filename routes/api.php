@@ -61,6 +61,8 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('/check-product-exists', [SaveProductController::class, 'checkProductExists']);
     //update user profile
     Route::put('/update-profile', [UserController::class, 'update']);
+    //view order history
+    Route::get('/order-history', [OrderController::class, 'getUserOrders']);
 });
 
 // Store Products Routes (Authenticated)
