@@ -215,6 +215,7 @@ class OrderController extends Controller
                                 'unique_price' => $item->product->discounted_price
                             ];
                         }),
+                        'order_date' => $order->order_date
                     ];
                 }),
             ];
