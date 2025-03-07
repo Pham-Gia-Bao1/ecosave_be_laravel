@@ -17,6 +17,7 @@ class SaveProductSeeder extends Seeder
                 'user_id' => $user->id,
                 'code' => '67c017ef378fb7033dac6132',
                 'expiry_date' => Carbon::now()->addDays(30), // Hết hạn sau 30 ngày
+                'reminder_days' => 5, // Nhắc nhở trước 5 ngày
             ]);
         }
     }
