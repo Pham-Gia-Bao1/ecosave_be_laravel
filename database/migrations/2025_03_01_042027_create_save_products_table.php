@@ -11,7 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Khóa ngoại liên kết với bảng users
             $table->string('code'); // Mã sản phẩm
-            $table->date('expiry_date')->nullable();
+            $table->date('expiry_date')->nullable(); // Ngày hết hạn
+            $table->integer('reminder_days')->default(0); // Số ngày để nhắc nhở trước
             $table->timestamps();
         });
     }
