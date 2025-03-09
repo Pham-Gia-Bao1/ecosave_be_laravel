@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ProductCreated;
+use App\Events\ProductUpdated;
 use App\Helpers\ApiResponse;
 use App\Models\Product;
 use App\Models\User;
@@ -15,7 +16,8 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['store', 'category', 'images']);
+        $query = Product::with(['store', 'category', 'images'])
+        ->whereDate('expiration_date', '>=', now());
 
         // Các bộ lọc cơ bản
         $filters = [
@@ -283,7 +285,15 @@ class ProductController extends Controller
             }
         }
 
-        return ApiResponse::success($product, "Sản phẩm đã được cập nhật thành công");
+        $product->load(['images']);
+
+        broadcast(new ProductUpdated($product));
+
+        return ApiResponse::success(
+            $product,
+            "Sản phẩm đã được cập nhật thành công"
+        );
+
     }
 
     public function deleteProduct($storeId, $productId)
