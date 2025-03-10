@@ -79,6 +79,12 @@ Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api
 
 Route::group(['prefix' => 'stores/{storeId}/orders', 'middleware' => 'auth:api'], function () {
     Route::get('/', [OrderController::class, 'getOrdersByStore']);
+    Route::get('/deleted', [OrderController::class, 'getDeletedOrders']);
+    Route::get('/{orderId}', [OrderController::class, 'getOrderDetail']);
+    Route::put('/{orderId}/status', [OrderController::class, 'updateOrderStatus']);
+    Route::delete('/{orderId}', [OrderController::class, 'deleteOrder']);
+    Route::delete('/{orderId}/force', [OrderController::class, 'forceDeleteOrder']);
+    Route::post('/{orderId}/restore', [OrderController::class, 'restoreOrder']);
 });
 
 Route::post('/upload-image', [ImageController::class, 'upload']);
