@@ -9,7 +9,7 @@ class SaveProduct extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'code', 'expiry_date'];
+    protected $fillable = ['user_id', 'code', 'expiry_date', 'reminder_days'];
 
     public function user()
     {

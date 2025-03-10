@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\ProductCreated;
+use App\Events\ProductUpdated;
 use App\Helpers\ApiResponse;
 use App\Models\Product;
 use App\Models\User;
@@ -15,9 +16,10 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['store', 'category', 'images']);
+        $query = Product::with(['store', 'category', 'images'])
+        ->whereDate('expiration_date', '>=', now());
 
-        // Mảng điều kiện lọc
+        // Các bộ lọc cơ bản
         $filters = [
             'store_id' => 'store_id',
             'expiration_date' => 'expiration_date',
@@ -25,54 +27,74 @@ class ProductController extends Controller
             'max_price' => ['discounted_price', '<='],
         ];
 
-        // Áp dụng bộ lọc động
         foreach ($filters as $param => $condition) {
-            if ($request->has($param)) {
-                if (is_array($condition)) {
-                    $query->where($condition[0], $condition[1], $request->$param);
-                } else {
-                    $query->where($condition, $request->$param);
-                }
+            if ($request->filled($param)) {
+                is_array($condition)
+                    ? $query->where($condition[0], $condition[1], $request->$param)
+                    : $query->where($condition, $request->$param);
             }
         }
 
-        // Lọc theo ID cửa hàng (nếu có)
-        $query->when($request->store_id, function ($q, $storeId) {
-            return $q->where('store_id', $storeId);
-        });
-
         // Lọc theo tên sản phẩm
-        $query->when($request->name, function ($q, $name) {
-            return $q->where('name', 'like', "%$name%");
-        });
+        if ($request->filled('name')) {
+            $query->where('name', 'like', "%{$request->name}%");
+        }
 
         // Lọc theo tên cửa hàng
-        $query->when($request->store_name, function ($q, $storeName) {
-            return $q->whereHas('store', fn($store) => $store->where('store_name', 'like', "%$storeName%"));
-        });
+        if ($request->filled('store_name')) {
+            $query->whereHas('store', function ($q) use ($request) {
+                $q->where('store_name', 'like', "%{$request->store_name}%");
+            });
+        }
 
-        // Lọc theo nhiều danh mục
-        $query->when($request->category_id, function ($q, $categoryIds) {
-            return $q->whereIn('category_id', explode(',', $categoryIds));
-        });
+        // Lọc theo danh mục
+        if ($request->filled('category_id')) {
+            $categoryIds = array_filter(explode(',', $request->category_id));
+            if (!empty($categoryIds)) {
+                $query->whereIn('category_id', $categoryIds);
+            }
+        }
 
-        // Lọc theo tên danh mục
-        $query->when($request->category_name, function ($q, $categoryName) {
-            return $q->whereHas('category', fn($category) => $category->where('name', 'like', "%$categoryName%"));
-        });
+        if ($request->filled('category_name')) {
+            $query->whereHas('category', function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->category_name}%");
+            });
+        }
 
-        // Lọc theo đánh giá (rating) nếu hợp lệ
-        $query->when($request->rating, function ($q, $rating) {
-            return ($rating >= 0 && $rating <= 5)
-                ? $q->where('rating', '>=', (float) $rating)
-                : ApiResponse::error('Giá trị rating không hợp lệ. Vui lòng nhập số từ 0 đến 5.', 400);
-        });
+        // Lọc theo khoảng cách
+        if ($request->has(['distance', 'user_lat', 'user_lng'])) {
+            $distance = (float) $request->distance;
+            $userLat = (float) $request->user_lat;
+            $userLng = (float) $request->user_lng;
+
+            $query->whereHas('store', function ($q) use ($userLat, $userLng, $distance) {
+                $q->selectRaw("stores.*,
+                    (6371 * acos(
+                        cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?))
+                        + sin(radians(?)) * sin(radians(latitude))
+                    )) AS distance", [$userLat, $userLng, $userLat])
+                    ->having("distance", "<=", $distance)
+                    ->orderBy("distance", "asc");
+            });
+        }
+
+        // Lọc theo đánh giá
+        if ($request->filled('rating')) {
+            $rating = (float) $request->rating;
+            if ($rating >= 0 && $rating <= 5) {
+                $query->where('rating', '=', $rating);
+            } else {
+                return ApiResponse::error('Giá trị rating không hợp lệ. Vui lòng nhập số từ 0 đến 5.', 400);
+            }
+        }
 
         // Phân trang
         $products = $query->paginate(100);
 
         return ApiResponse::paginate($products, "Lấy danh sách sản phẩm thành công");
     }
+
+
 
     public function productDetail($id)
     {
@@ -95,19 +117,19 @@ class ProductController extends Controller
     private function checkStoreAccess($storeId)
     {
         $user = Auth::user();
-        
+
         if (!$user) {
             return false;
         }
-        
+
         if ($user->role === 3) {
             $store = Store::where('id', $storeId)
                 ->where('user_id', $user->id)
                 ->first();
-                
+
             return $store ? true : false;
         }
-        
+
         return false;
     }
 
@@ -263,7 +285,15 @@ class ProductController extends Controller
             }
         }
 
-        return ApiResponse::success($product, "Sản phẩm đã được cập nhật thành công");
+        $product->load(['images']);
+
+        broadcast(new ProductUpdated($product));
+
+        return ApiResponse::success(
+            $product,
+            "Sản phẩm đã được cập nhật thành công"
+        );
+
     }
 
     public function deleteProduct($storeId, $productId)
