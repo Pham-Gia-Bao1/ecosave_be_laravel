@@ -34,7 +34,7 @@ class CartController extends Controller
         $cartItems = $cart->cartItems()->with('product.store', 'product.images')->get();
 
         if ($cartItems->isEmpty()) {
-            return response()->json(['message' => 'No items in the cart.'], 200);
+            return response()->json(['message' => 'Hiện tại không có sản phẩm nào trong giỏ hàng'], 200);
         }
 
         // Tổng số lượng sản phẩm & tổng số loại sản phẩm trong giỏ hàng
