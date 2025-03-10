@@ -6,6 +6,7 @@ use App\Helpers\ApiResponse;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 class StoreController extends Controller
 {
@@ -57,30 +58,34 @@ class StoreController extends Controller
     }
 
     // Lấy thông tin chi tiết của một cửa hàng
-        public function show($id)
+        public function show()
         {
-            $store = Store::find($id);
-
-            if (!$store) {
+            $user = Auth::user();
+            if (!$user) {
                 return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
             }
-
+            $store = Store::where('user_id', $user->id)->first();
             return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
         }
 
-
-
     // Cập nhật cửa hàng
-    public function update(Request $request, $id)
+    public function updateStoreProfile(Request $request)
     {
         try {
-            $store = Store::find($id);
+            $user = Auth::user();
+            if (!$user) {
+                return ApiResponse::error(null, "Không tìm thấy người dùng!", 404);
+            }
+
+            // Tìm cửa hàng theo user_id
+            $store = Store::where('user_id', $user->id)->first();
+
             if (!$store) {
                 return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
             }
 
             $validatedData = $request->validate([
-                'store_name' => 'required|string|max:255|unique:stores,store_name,' . $id,
+                'store_name' => 'required|string|max:255|unique:stores,store_name,' . $store->id,
                 'avatar' => 'nullable|string|url',
                 'store_type' => 'required|string|max:100',
                 'opening_hours' => 'nullable|string|max:255',
@@ -90,15 +95,16 @@ class StoreController extends Controller
                 'latitude' => 'nullable|numeric',
                 'longitude' => 'nullable|numeric',
                 'description' => 'nullable|string',
-                'user_id' => 'required|exists:users,id',
             ]);
 
             $store->update($validatedData);
+
             return ApiResponse::success($store, "Cập nhật cửa hàng thành công!");
         } catch (ValidationException $e) {
             return ApiResponse::error($e->errors(), "Dữ liệu không hợp lệ!", 422);
         }
     }
+
 
     // Xóa cửa hàng (soft delete)
     public function destroy($id)
