@@ -63,6 +63,10 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::put('/update-profile', [UserController::class, 'update']);
     //view order history
     Route::get('/order-history', [OrderController::class, 'getUserOrders']);
+    //view store profile
+    Route::get('/store-profile', [StoreController ::class, 'show']);
+    //update store profile
+    Route::put('/update-store-profile', [StoreController ::class, 'updateStoreProfile']);
 });
 
 // Store Products Routes (Authenticated)
