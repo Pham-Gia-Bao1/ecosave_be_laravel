@@ -133,10 +133,9 @@ class OrderController extends Controller
             }
 
             return $next($request);
-        });
+        })->except(['index', 'store', 'show', 'update', 'destroy']);
     }
 
-    // Lấy danh sách đơn hàng theo cửa hàng
     public function getOrdersByStore(Request $request, $storeId)
     {
         if (!$this->storeId || $this->storeId != $storeId) {
@@ -179,19 +178,6 @@ class OrderController extends Controller
         ], "Lấy danh sách đơn hàng thành công");
     }
 
-    // Lấy danh sách đơn hàng đã xóa (soft delete)
-    public function getDeletedOrders($storeId)
-    {
-        if (!$this->storeId || $this->storeId != $storeId) {
-            return ApiResponse::error("Bạn không có quyền truy cập", [], 403);
-        }
-
-        $orders = Order::onlyTrashed()->where('store_id', $this->storeId)->get();
-
-        return ApiResponse::success($orders->map(fn($order) => $this->formatOrder($order)), "Lấy danh sách đơn hàng đã xóa thành công");
-    }
-
-    // Lấy chi tiết đơn hàng
     public function getOrderDetail($storeId, $orderId)
     {
         if (!$this->storeId || $this->storeId != $storeId) {
@@ -207,7 +193,6 @@ class OrderController extends Controller
         return ApiResponse::success($this->formatOrder($order), "Lấy chi tiết đơn hàng thành công");
     }
 
-    // Cập nhật trạng thái đơn hàng
     public function updateOrderStatus(Request $request, $storeId, $orderId)
     {
         if (!$this->storeId || $this->storeId != $storeId) {
@@ -230,7 +215,6 @@ class OrderController extends Controller
         return ApiResponse::success($this->formatOrder($order), "Cập nhật trạng thái đơn hàng thành công");
     }
 
-    // Xóa đơn hàng (soft delete)
     public function deleteOrder($storeId, $orderId)
     {
         if (!$this->storeId || $this->storeId != $storeId) {
@@ -248,7 +232,6 @@ class OrderController extends Controller
         return ApiResponse::success(null, "Xóa đơn hàng thành công");
     }
 
-    // Xóa vĩnh viễn đơn hàng
     public function forceDeleteOrder($storeId, $orderId)
     {
         if (!$this->storeId || $this->storeId != $storeId) {
@@ -266,7 +249,6 @@ class OrderController extends Controller
         return ApiResponse::success(null, "Xóa vĩnh viễn đơn hàng thành công");
     }
 
-    // Khôi phục đơn hàng đã xóa
     public function restoreOrder($storeId, $orderId)
     {
         if (!$this->storeId || $this->storeId != $storeId) {
@@ -284,7 +266,6 @@ class OrderController extends Controller
         return ApiResponse::success($this->formatOrder($order), "Khôi phục đơn hàng thành công");
     }
 
-    // Định dạng dữ liệu đơn hàng
     private function formatOrder($order)
     {
         $firstItem = $order->orderItems->isNotEmpty() ? $order->orderItems->first() : null;
@@ -369,5 +350,4 @@ class OrderController extends Controller
 
         return ApiResponse::success($formattedOrders, "Orders fetched successfully");
     }
-
 }
