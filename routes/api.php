@@ -57,10 +57,18 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::put('/cart/update-quantity', [CartController::class, 'updateItemQuantity']);
     // product after scaned
     Route::get('/save-products', [SaveProductController::class, 'getSaveProductsByUser']);
+    Route::get('/saved-products/all', [SaveProductController::class, 'getAllSaveProductsByUser']);
     Route::post('/save-products', [SaveProductController::class, 'storeSaveProduct']);
+    Route::delete('/save-products/{code}', [SaveProductController::class, 'deleteSaveProduct']);
     Route::post('/check-product-exists', [SaveProductController::class, 'checkProductExists']);
     //update user profile
     Route::put('/update-profile', [UserController::class, 'update']);
+    //view order history
+    Route::get('/order-history', [OrderController::class, 'getUserOrders']);
+    //view store profile
+    Route::get('/store-profile', [StoreController ::class, 'show']);
+    //update store profile
+    Route::put('/update-store-profile', [StoreController ::class, 'updateStoreProfile']);
 });
 
 // Store Products Routes (Authenticated)
@@ -79,6 +87,12 @@ Route::group(['prefix' => 'stores/{storeId}/products', 'middleware' => 'auth:api
 
 Route::group(['prefix' => 'stores/{storeId}/orders', 'middleware' => 'auth:api'], function () {
     Route::get('/', [OrderController::class, 'getOrdersByStore']);
+    Route::get('/deleted', [OrderController::class, 'getDeletedOrders']);
+    Route::get('/{orderId}', [OrderController::class, 'getOrderDetail']);
+    Route::put('/{orderId}/status', [OrderController::class, 'updateOrderStatus']);
+    Route::delete('/{orderId}', [OrderController::class, 'deleteOrder']);
+    Route::delete('/{orderId}/force', [OrderController::class, 'forceDeleteOrder']);
+    Route::post('/{orderId}/restore', [OrderController::class, 'restoreOrder']);
 });
 
 Route::post('/upload-image', [ImageController::class, 'upload']);
