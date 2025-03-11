@@ -12,6 +12,8 @@ Route::group(['middleware' => 'api'], function () {
     Route::get('me', [AuthController::class, 'userProfile']);
 });
 
+Route::post('/check-email', [AuthController::class, 'checkEmail']);
+
 
 Route::group([
     'middleware' => 'api',
