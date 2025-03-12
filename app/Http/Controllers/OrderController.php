@@ -133,7 +133,7 @@ class OrderController extends Controller
             }
 
             return $next($request);
-        })->except(['index', 'store', 'show', 'update', 'destroy']);
+        })->except(['index', 'store', 'show', 'update', 'destroy','getUserOrders']);
     }
 
     public function getOrdersByStore(Request $request, $storeId)

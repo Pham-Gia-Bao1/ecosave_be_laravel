@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Models\Store;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
@@ -57,16 +58,16 @@ class StoreController extends Controller
         }
     }
 
-    // Lấy thông tin chi tiết của một cửa hàng
-        public function show()
-        {
-            $user = Auth::user();
-            if (!$user) {
-                return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
-            }
-            $store = Store::where('user_id', $user->id)->first();
-            return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
+    public function show($id)
+    {
+        $store = Store::find($id);
+
+        if (!$store) {
+            return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
         }
+
+        return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
+    }
 
     // Cập nhật cửa hàng
     public function updateStoreProfile(Request $request)
