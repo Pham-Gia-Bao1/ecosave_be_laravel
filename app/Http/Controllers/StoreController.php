@@ -66,6 +66,16 @@ class StoreController extends Controller
         if (!$store) {
             return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
         }
+
+        return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
+    }
+
+    public function showStoreProfile()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
+        }
         $store = Store::where('user_id', $user->id)->first();
         return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
     }
