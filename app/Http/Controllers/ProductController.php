@@ -38,9 +38,13 @@ class ProductController extends Controller
             }
         }
 
-        // Lọc theo tên sản phẩm
         if ($request->filled('name')) {
-            $query->where('name', 'like', "%{$request->name}%");
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->name}%")
+                  ->orWhereHas('store', function ($q2) use ($request) {
+                      $q2->where('store_name', 'like', "%{$request->name}%");
+                  });
+            });
         }
 
         // Lọc theo danh mục
@@ -84,12 +88,7 @@ class ProductController extends Controller
             }
         }
 
-        // Lọc theo tên cửa hàng
-        if ($request->filled('store_name')) {
-            $query->whereHas('store', function ($q) use ($request) {
-                $q->where('store_name', 'like', "%{$request->store_name}%");
-            });
-        }
+
 
 
         // Phân trang
