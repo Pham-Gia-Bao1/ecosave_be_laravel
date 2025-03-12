@@ -34,8 +34,22 @@ class SaveProductController extends Controller
             ], 500);
         }
     }
+    public function getAllSaveProductsByUser(Request $request)
+    {
+        try {
+            $request->validate([
+                'user_id' => 'required|integer|exists:users,id',
+            ]);
 
+            // Lấy tất cả sản phẩm theo user_id mà không kiểm tra ngày hiện tại
+            $products = SaveProduct::where('user_id', $request->user_id)
+                ->get(['id', 'code', 'expiry_date', 'reminder_days']);
 
+            return ApiResponse::success($products, "Lấy danh sách lưu thành công");
+        } catch (Exception $e) {
+            return ApiResponse::error("Lỗi xảy ra khi lấy sản sản phẩm", ['error' => $e->getMessage()], 500);
+        }
+    }
 
     // Lưu sản phẩm vào bảng save_products
     public function storeSaveProduct(Request $request)
@@ -106,10 +120,16 @@ class SaveProductController extends Controller
     }
 
     // Xóa sản phẩm đã lưu
-    public function deleteSaveProduct($id)
+    public function deleteSaveProduct($code)
     {
         try {
-            $saveProduct = SaveProduct::findOrFail($id);
+            $userId = auth()->id(); // Lấy ID của user đang đăng nhập
+            $saveProduct = SaveProduct::where('code', $code)->where('user_id', $userId)->first();
+
+            if (!$saveProduct) {
+                return ApiResponse::error("Không tìm thấy sản phẩm hoặc bạn không có quyền xóa", [], 403);
+            }
+
             $saveProduct->delete();
 
             return ApiResponse::success(null, "Sản phẩm đã được xóa thành công");

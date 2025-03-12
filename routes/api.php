@@ -57,7 +57,9 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::put('/cart/update-quantity', [CartController::class, 'updateItemQuantity']);
     // product after scaned
     Route::get('/save-products', [SaveProductController::class, 'getSaveProductsByUser']);
+    Route::get('/saved-products/all', [SaveProductController::class, 'getAllSaveProductsByUser']);
     Route::post('/save-products', [SaveProductController::class, 'storeSaveProduct']);
+    Route::delete('/save-products/{code}', [SaveProductController::class, 'deleteSaveProduct']);
     Route::post('/check-product-exists', [SaveProductController::class, 'checkProductExists']);
     //update user profile
     Route::put('/update-profile', [UserController::class, 'update']);
