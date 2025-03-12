@@ -68,7 +68,7 @@ Route::group(['middleware' => 'auth:api'], function () {
     //view store profile
     Route::get('/store-profile', [StoreController ::class, 'show']);
     //update store profile
-    Route::put('/update-store-profile', [StoreController ::class, 'updateStoreProfile']);
+    Route::match(['put', 'post'], '/update-store-profile', [StoreController::class, 'updateStoreProfile']);
 });
 
 // Store Products Routes (Authenticated)
