@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class StoreController extends Controller
 {
@@ -69,6 +70,16 @@ class StoreController extends Controller
         return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
     }
 
+    public function showStoreProfile()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
+        }
+        $store = Store::where('user_id', $user->id)->first();
+        return ApiResponse::success($store, "Lấy thông tin cửa hàng thành công!");
+    }
+
     // Cập nhật cửa hàng
     public function updateStoreProfile(Request $request)
     {
@@ -87,22 +98,34 @@ class StoreController extends Controller
 
             $validatedData = $request->validate([
                 'store_name' => 'required|string|max:255|unique:stores,store_name,' . $store->id,
-                'avatar' => 'nullable|string|url',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072', // Validate file upload
                 'store_type' => 'required|string|max:100',
                 'opening_hours' => 'nullable|string|max:255',
                 'status' => 'required|in:active,inactive',
                 'contact_email' => 'nullable|email|max:255',
                 'contact_phone' => 'nullable|string|max:20',
+                'address' => 'nullable|string|max:255',
                 'latitude' => 'nullable|numeric',
                 'longitude' => 'nullable|numeric',
                 'description' => 'nullable|string',
             ]);
+
+            if ($request->hasFile('avatar')) {
+                $file = $request->file('avatar');
+                $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+
+                $path = $file->storeAs('uploads/avatars', $fileName, 'public');
+
+                $validatedData['avatar'] = url('storage/' . $path);
+            }
 
             $store->update($validatedData);
 
             return ApiResponse::success($store, "Cập nhật cửa hàng thành công!");
         } catch (ValidationException $e) {
             return ApiResponse::error($e->errors(), "Dữ liệu không hợp lệ!", 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error(null, "Có lỗi xảy ra!", 500);
         }
     }
 
