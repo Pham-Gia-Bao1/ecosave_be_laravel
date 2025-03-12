@@ -97,9 +97,6 @@ class ProductController extends Controller
         return ApiResponse::paginate($products, "Lấy danh sách sản phẩm thành công");
     }
 
-
-
-
     public function productDetail($id)
     {
         try {
