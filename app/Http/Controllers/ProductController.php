@@ -16,10 +16,13 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['store', 'category', 'images'])
-        ->whereDate('expiration_date', '>=', now());
 
-        // Các bộ lọc cơ bản
+
+        // Truy vấn bảng Product
+        $query = Product::with(['store', 'category', 'images'])
+            ->whereDate('expiration_date', '>=', now());
+
+        // Lọc sản phẩm theo các bộ lọc cơ bản
         $filters = [
             'store_id' => 'store_id',
             'expiration_date' => 'expiration_date',
@@ -35,15 +38,12 @@ class ProductController extends Controller
             }
         }
 
-        // Lọc theo tên sản phẩm
         if ($request->filled('name')) {
-            $query->where('name', 'like', "%{$request->name}%");
-        }
-
-        // Lọc theo tên cửa hàng
-        if ($request->filled('store_name')) {
-            $query->whereHas('store', function ($q) use ($request) {
-                $q->where('store_name', 'like', "%{$request->store_name}%");
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->name}%")
+                  ->orWhereHas('store', function ($q2) use ($request) {
+                      $q2->where('store_name', 'like', "%{$request->name}%");
+                  });
             });
         }
 
@@ -78,7 +78,7 @@ class ProductController extends Controller
             });
         }
 
-        // Lọc theo đánh giá
+        // Lọc theo đánh giá (rating)
         if ($request->filled('rating')) {
             $rating = (float) $request->rating;
             if ($rating >= 0 && $rating <= 5) {
@@ -88,11 +88,15 @@ class ProductController extends Controller
             }
         }
 
+
+
+
         // Phân trang
         $products = $query->paginate(100);
 
         return ApiResponse::paginate($products, "Lấy danh sách sản phẩm thành công");
     }
+
 
 
 
@@ -293,7 +297,6 @@ class ProductController extends Controller
             $product,
             "Sản phẩm đã được cập nhật thành công"
         );
-
     }
 
     public function deleteProduct($storeId, $productId)

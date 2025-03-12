@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Models\Store;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
@@ -58,11 +59,11 @@ class StoreController extends Controller
         }
     }
 
-    // Lấy thông tin chi tiết của một cửa hàng
-    public function show()
+    public function show($id)
     {
-        $user = Auth::user();
-        if (!$user) {
+        $store = Store::find($id);
+
+        if (!$store) {
             return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
         }
         $store = Store::where('user_id', $user->id)->first();
@@ -71,54 +72,23 @@ class StoreController extends Controller
 
     // Cập nhật cửa hàng
     public function updateStoreProfile(Request $request)
-{
-    try {
-        $user = Auth::user();
-        if (!$user) {
-            return ApiResponse::error(null, "Không tìm thấy người dùng!", 404);
-        }
-
-        // Tìm cửa hàng theo user_id
-        $store = Store::where('user_id', $user->id)->first();
-
-        if (!$store) {
-            return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
-        }
-
-        // Kiểm tra Content-Type của request
-        $contentType = $request->header('Content-Type');
-        
-        // Log để debug
-        \Log::info('Content-Type: ' . $contentType);
-        \Log::info('Request data:', $request->all());
-        \Log::info('Files:', $request->allFiles());
-
-        // Validate dữ liệu dựa vào loại request
-        if (strpos($contentType, 'application/json') !== false) {
-            // Xử lý JSON request - không thể xử lý file
-            $validatedData = $request->validate([
-                'store_name' => 'required|string|max:255|unique:stores,store_name,' . $store->id,
-                'store_type' => 'required|string|max:100',
-                'opening_hours' => 'nullable|string|max:255',
-                'status' => 'required|in:active,inactive',
-                'contact_email' => 'nullable|email|max:255',
-                'contact_phone' => 'nullable|string|max:20',
-                'address' => 'nullable|string|max:255',
-                'latitude' => 'nullable|numeric',
-                'longitude' => 'nullable|numeric',
-                'description' => 'nullable|string',
-                // Không validate avatar vì không thể upload file qua JSON
-            ]);
-            
-            // Cảnh báo người dùng nếu họ đang cố gửi avatar qua JSON
-            if ($request->has('avatar')) {
-                return ApiResponse::error(null, "Không thể upload file qua JSON request. Vui lòng sử dụng form-data!", 422);
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return ApiResponse::error(null, "Không tìm thấy người dùng!", 404);
             }
-        } else {
-            // Xử lý form-data request (có thể chứa file)
+
+            // Tìm cửa hàng theo user_id
+            $store = Store::where('user_id', $user->id)->first();
+
+            if (!$store) {
+                return ApiResponse::error(null, "Không tìm thấy cửa hàng!", 404);
+            }
+
             $validatedData = $request->validate([
                 'store_name' => 'required|string|max:255|unique:stores,store_name,' . $store->id,
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072', // Validate file upload
                 'store_type' => 'required|string|max:100',
                 'opening_hours' => 'nullable|string|max:255',
                 'status' => 'required|in:active,inactive',
@@ -129,29 +99,25 @@ class StoreController extends Controller
                 'longitude' => 'nullable|numeric',
                 'description' => 'nullable|string',
             ]);
+
+            if ($request->hasFile('avatar')) {
+                $file = $request->file('avatar');
+                $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+
+                $path = $file->storeAs('uploads/avatars', $fileName, 'public');
+
+                $validatedData['avatar'] = url('storage/' . $path);
+            }
+
+            $store->update($validatedData);
+
+            return ApiResponse::success($store, "Cập nhật cửa hàng thành công!");
+        } catch (ValidationException $e) {
+            return ApiResponse::error($e->errors(), "Dữ liệu không hợp lệ!", 422);
+        } catch (\Exception $e) {
+            return ApiResponse::error(null, "Có lỗi xảy ra!", 500);
         }
-
-        // Xử lý file avatar nếu có
-        if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            $fileName = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
-
-            $path = $file->storeAs('uploads/avatars', $fileName, 'public');
-
-            $validatedData['avatar'] = url('storage/' . $path);
-        }
-
-        // Cập nhật cửa hàng
-        $store->update($validatedData);
-
-        return ApiResponse::success($store, "Cập nhật cửa hàng thành công!");
-    } catch (ValidationException $e) {
-        return ApiResponse::error($e->errors(), "Dữ liệu không hợp lệ!", 422);
-    } catch (\Exception $e) {
-        \Log::error('Store update error: ' . $e->getMessage());
-        return ApiResponse::error(null, "Có lỗi xảy ra: " . $e->getMessage(), 500);
     }
-}
 
 
     // Xóa cửa hàng (soft delete)
