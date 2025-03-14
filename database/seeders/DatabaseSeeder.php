@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             PurchaseHistorySeeder::class,
             OrderItemSeeder::class,
             SaveProductSeeder::class,
+            WishlistSeeder::class
         ]);
     }
 }
