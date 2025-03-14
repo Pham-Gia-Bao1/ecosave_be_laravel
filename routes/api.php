@@ -12,6 +12,7 @@ use App\Http\Controllers\SaveProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\WishlistController;
 
 // Product Routes
 Route::get('/products', [ProductController::class, 'index']);
@@ -69,6 +70,12 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('/store-profile', [StoreController ::class, 'show']);
     //update store profile
     Route::put('/update-store-profile', [StoreController ::class, 'updateStoreProfile']);
+
+    // wish list
+    Route::get('/wishlist', [WishlistController::class, 'index']);
+    Route::post('/wishlist', [WishlistController::class, 'store']);
+    Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
+    Route::get('/wishlist/product-ids', [WishlistController::class, 'getAllProductIds']);
 });
 
 // Store Products Routes (Authenticated)
