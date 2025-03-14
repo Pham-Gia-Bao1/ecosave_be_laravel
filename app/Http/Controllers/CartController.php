@@ -97,7 +97,7 @@ class CartController extends Controller
         // Kiểm tra xác thực người dùng
         if (!Auth::check()) {
             return response()->json([
-                'error' => 'Người dùng chưa đăng nhập.',
+                'error' => 'Vui lòng đăng nhập trước khi thêm vào giỏ hàng.',
             ], 401);
         }
 
@@ -117,6 +117,11 @@ class CartController extends Controller
             ], 404);
         }
 
+        if ($product->stock_quantity == 0) {
+            return response()->json([
+                'error' => 'Sản phẩm đang hết hàng, vui lòng thêm sản phẩm này sau!',
+            ], 400);
+        }
         // Lấy hoặc tạo giỏ hàng
         $cart = Cart::firstOrCreate(['user_id' => $user_id]);
 

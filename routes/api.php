@@ -67,8 +67,9 @@ Route::group(['middleware' => 'auth:api'], function () {
     //view order history
     Route::get('/order-history', [OrderController::class, 'getUserOrders']);
     //view store profile
-    Route::get('/store-profile', [StoreController ::class, 'show']);
+    Route::get('/store-profile', [StoreController ::class, 'showStoreProfile']);
     //update store profile
+
     Route::put('/update-store-profile', [StoreController ::class, 'updateStoreProfile']);
 
     // wish list
@@ -76,6 +77,9 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::post('/wishlist', [WishlistController::class, 'store']);
     Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
     Route::get('/wishlist/product-ids', [WishlistController::class, 'getAllProductIds']);
+
+    Route::match(['put', 'post'], '/update-store-profile', [StoreController::class, 'updateStoreProfile']);
+
 });
 
 // Store Products Routes (Authenticated)

@@ -310,43 +310,49 @@ class OrderController extends Controller
     }
 
     public function getUserOrders()
-    {
-        $user = Auth::user(); // Lấy user hiện tại
-        if (!$user) {
-            return ApiResponse::error(null, "Unauthorized", 401);
-        }
+{
+    $user = Auth::user(); // Lấy user hiện tại
+    if (!$user) {
+        return ApiResponse::error(null, "Unauthorized", 401);
+    }
 
-        $orders = Order::where('user_id', $user->id)
-            ->with(['store', 'orderItems.product'])
-            ->get()
-            ->groupBy('store_id');
+    $orders = Order::where('user_id', $user->id)
+        ->with(['store', 'orderItems.product'])
+        ->get()
+        ->groupBy('store_id');
 
-        $formattedOrders = $orders->map(function ($ordersByStore) {
-            $store = $ordersByStore->first()->store;
-            return [
-                'store_id' => $store->id,
-                'store_name' => $store->store_name,
-                'orders' => $ordersByStore->map(function ($order) {
-                    return [
-                        'order_id' => $order->id,
-                        'order_code' => $order->order_code,
-                        'total_price' => $order->total_price,
-                        'status' => $order->status,
-                        'items' => $order->orderItems->map(function ($item) {
-                            return [
-                                'product_id' => $item->product->id,
-                                'product_name' => $item->product->name,
-                                'product_image' => $item->product->images->pluck('image_url'),
-                                'quantity' => $item->quantity,
-                                'sub_price' => $item->price,
-                                'unique_price' => $item->product->discounted_price
-                            ];
-                        }),
-                        'order_date' => $order->order_date
-                    ];
-                }),
-            ];
-        });
+    $formattedOrders = $orders->map(function ($ordersByStore) {
+        $store = $ordersByStore->first()->store;
+        return [
+            'store_id' => $store->id,
+            'store_name' => $store->store_name,
+            'orders' => $ordersByStore->map(function ($order) {
+                return [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code,
+                    'total_price' => $order->total_price,
+                    'status' => $order->status,
+                    'items' => $order->orderItems->map(function ($item) {
+                        $originalTotal = $item->product->original_price * $item->quantity;
+                        $discountedTotal = $item->product->discounted_price * $item->quantity;
+                        $savedAmount = $originalTotal - $discountedTotal;
+
+                        return [
+                            'product_id' => $item->product->id,
+                            'product_name' => $item->product->name,
+                            'product_image' => $item->product->images->pluck('image_url'),
+                            'quantity' => $item->quantity,
+                            'sub_price' => $item->price,
+                            'unique_price' => $item->product->discounted_price,
+                            'original_price' => $item->product->original_price,
+                            'saved_amount' => $savedAmount, // Số tiền tiết kiệm được
+                        ];
+                    }),
+                    'order_date' => $order->order_date
+                ];
+            }),
+        ];
+    });
 
         return ApiResponse::success($formattedOrders, "Orders fetched successfully");
     }
