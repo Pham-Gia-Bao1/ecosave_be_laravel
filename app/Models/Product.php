@@ -30,6 +30,10 @@ class Product extends Model
         'storage_instructions' // Bảo quản
     ];
 
+    protected $casts = [
+        'expiration_date' => 'date',
+    ];
+
     protected $dates = ['deleted_at'];
 
     public function store()
@@ -50,6 +54,16 @@ class Product extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function cartItems()
+    {
+        return $this->hasMany(CartItem::class);
+    }
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
 }
