@@ -12,6 +12,7 @@ use App\Http\Controllers\SaveProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderItemController;
+use App\Http\Controllers\RevenueController;
 use App\Http\Controllers\WishlistController;
 
 // Product Routes
@@ -104,6 +105,12 @@ Route::group(['prefix' => 'stores/{storeId}/orders', 'middleware' => 'auth:api']
     Route::delete('/{orderId}', [OrderController::class, 'deleteOrder']);
     Route::delete('/{orderId}/force', [OrderController::class, 'forceDeleteOrder']);
     Route::post('/{orderId}/restore', [OrderController::class, 'restoreOrder']);
+});
+
+Route::group(['middleware' => 'auth:api'], function () {
+    Route::get('/store/revenue', [RevenueController::class, 'getStoreRevenue']);
+    
+    Route::get('/store/revenue/export', [RevenueController::class, 'exportRevenueReport']);
 });
 
 Route::post('/upload-image', [ImageController::class, 'upload']);

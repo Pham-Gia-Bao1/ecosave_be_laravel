@@ -10,6 +10,10 @@ class Order extends Model
 
     protected $fillable = ['user_id', 'store_id', 'total_price', 'status','order_code'];
 
+    protected $casts = [
+        'order_date' => 'datetime',
+    ];
+    
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -23,5 +27,10 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function purchaseHistory()
+    {
+        return $this->hasOne(PurchaseHistory::class);
     }
 }
