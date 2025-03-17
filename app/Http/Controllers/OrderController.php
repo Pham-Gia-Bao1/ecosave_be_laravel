@@ -326,6 +326,8 @@ class OrderController extends Controller
         return [
             'store_id' => $store->id,
             'store_name' => $store->store_name,
+            'store_latitude' => $store->latitude,
+            'store_longitude' => $store->longitude,
             'orders' => $ordersByStore->map(function ($order) {
                 return [
                     'order_id' => $order->id,
