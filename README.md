@@ -1,66 +1,225 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## run server
+--- php artisan serve
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## install jwt
+--- composer require tymon/jwt-auth
 
-## About Laravel
+##  Publish the JWT Configuration
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Generate the JWT Secret Key
+--- php artisan jwt:secret
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## run migrations
+--- php artisan migrate
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## run seeders
+--- php artisan db:seed
 
-## Learning Laravel
+Dưới đây là tài liệu hướng dẫn cài đặt **Redis** và **Laravel Realtime** đầy đủ và chi tiết.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+# **📌 Hướng Dẫn Cài Đặt Realtime với Redis & Laravel Echo Server**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## **1️⃣ Cài đặt Redis cho Laravel**
+### **1.1 Cài đặt thư viện Redis cho Laravel**
+```sh
+composer require predis/predis
+```
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+### **1.2 Cấu hình `.env` để sử dụng Redis**
+Mở file `.env` và thiết lập cấu hình Redis:
 
-### Premium Partners
+```env
+BROADCAST_DRIVER=redis
+CACHE_DRIVER=redis
+QUEUE_CONNECTION=redis
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+REDIS_CLIENT=predis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+REDIS_DB=0
+REDIS_CACHE_DB=1
+```
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### **1.3 Cấu hình Redis trong `config/database.php`**
+Mở file `config/database.php`, kiểm tra Redis có được cấu hình đúng không:
 
-## Code of Conduct
+```php
+'redis' => [
+    'client' => env('REDIS_CLIENT', 'predis'),
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    'default' => [
+        'url' => env('REDIS_URL'),
+        'host' => env('REDIS_HOST', '127.0.0.1'),
+        'password' => env('REDIS_PASSWORD', null),
+        'port' => env('REDIS_PORT', '6379'),
+        'database' => env('REDIS_DB', 0),
+    ],
 
-## Security Vulnerabilities
+    'cache' => [
+        'url' => env('REDIS_URL'),
+        'host' => env('REDIS_HOST', '127.0.0.1'),
+        'password' => env('REDIS_PASSWORD', null),
+        'port' => env('REDIS_PORT', '6379'),
+        'database' => env('REDIS_CACHE_DB', 1),
+    ],
+],
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+### **1.4 Cấu hình Queue trong `config/queue.php`**
+Mở file `config/queue.php`, đảm bảo Redis được đặt làm driver hàng đợi:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```php
+'default' => env('QUEUE_CONNECTION', 'redis'),
+```
+
+---
+
+### **1.5 Cấu hình Broadcasting trong `config/broadcasting.php`**
+Mở file `config/broadcasting.php` và đảm bảo Redis là driver mặc định:
+
+```php
+'default' => env('BROADCAST_DRIVER', 'redis'),
+```
+
+---
+
+## **2️⃣ Cài đặt Redis trên Windows**
+### **2.1 Tải và cài đặt Redis cho Windows**
+📌 **Tải Redis tại:**
+👉 [https://github.com/tporadowski/redis/releases](https://github.com/tporadowski/redis/releases)
+
+📥 **Cài đặt Redis:**
+1. Tải **Redis-x64-5.0.14.1.msi** hoặc phiên bản mới hơn.
+2. Cài đặt và thêm Redis vào hệ thống.
+3. Thêm `redis-server.exe` vào **biến môi trường hệ thống** để có thể chạy Redis từ bất kỳ thư mục nào.
+
+📌 **Kiểm tra Redis đã cài chưa:**
+```sh
+redis-server
+```
+Nếu Redis chạy thành công, nó sẽ hiển thị **Redis server started**.
+
+---
+
+## **3️⃣ Cài đặt Redis Extension cho PHP**
+🔹 **Cách cài đặt Redis extension cho PHP 8.0.25 (ZTS, x64) trong XAMPP**
+
+### **3.1 Tải Redis extension**
+📥 **Tải tại:**
+👉 [https://windows.php.net/downloads/pecl/releases/redis/](https://windows.php.net/downloads/pecl/releases/redis/)
+
+🔎 Tìm phiên bản Redis mới nhất cho PHP **8.0, ZTS, x64**
+Ví dụ: **php_redis-5.3.7-8.0-ts-vs16-x64.zip**
+
+✅ **Giải thích các ký hiệu:**
+- `5.3.7` → Phiên bản Redis
+- `8.0` → Tương thích với PHP 8.0
+- `ts` → Thread Safe (ZTS)
+- `vs16` → Biên dịch bằng **Visual Studio 2019**
+- `x64` → Dành cho hệ điều hành **64-bit**
+
+---
+
+### **3.2 Cài đặt Redis extension vào PHP**
+1. **Giải nén** file `.zip` đã tải về.
+2. **Copy** file `php_redis.dll` vào thư mục XAMPP:
+   ```
+   C:\xampp\php\ext\
+   ```
+3. Mở file `php.ini` (trong thư mục `C:\xampp\php\`)
+   Thêm dòng sau vào cuối file:
+   ```
+   extension=redis
+   ```
+
+---
+
+### **3.3 Kiểm tra Redis đã được cài chưa**
+Chạy lệnh sau để kiểm tra Redis extension:
+```sh
+php -m | findstr redis
+```
+Nếu hiển thị **redis**, nghĩa là Redis extension đã được cài đặt thành công. 🎉
+
+---
+
+## **4️⃣ Chạy Redis Server**
+Sau khi Redis đã được cài đặt, khởi động Redis bằng lệnh:
+```sh
+redis-server
+```
+
+---
+
+## **5️⃣ Cài đặt Laravel Echo Server**
+Laravel Echo Server giúp Laravel gửi sự kiện tới frontend bằng WebSockets.
+
+### **5.1 Cài đặt Laravel Echo Server**
+```sh
+npm install -g laravel-echo-server
+```
+
+---
+
+### **5.2 Khởi tạo Laravel Echo Server**
+```sh
+laravel-echo-server init
+```
+Khi chạy lệnh này, Laravel sẽ yêu cầu bạn nhập một số thông tin. Nếu không chắc chắn, có thể giữ **giá trị mặc định** bằng cách nhấn **Enter**.
+
+---
+
+### **5.3 Chạy Laravel Echo Server**
+```sh
+laravel-echo-server start
+```
+Nếu chạy thành công, bạn sẽ thấy **Laravel Echo Server running on port 6001**.
+
+---
+
+## **6️⃣ Kiểm tra lại toàn bộ hệ thống**
+1. **Mở Redis server:**
+   ```sh
+   redis-server
+   ```
+2. **Mở Laravel queue worker:**
+   ```sh
+   php artisan queue:work
+   ```
+3. **Mở Laravel Echo Server:**
+   ```sh
+   laravel-echo-server start
+   ```
+4. **Mở Tinker và phát sự kiện:**
+   ```sh
+   php artisan tinker
+   >>> event(new \App\Events\ProductCreated(\App\Models\Product::first()));
+   ```
+5. **Kiểm tra log trên Redis:**
+   ```sh
+   redis-cli
+   SUBSCRIBE products
+   ```
+
+Nếu hệ thống hoạt động đúng, Redis sẽ nhận sự kiện và **frontend sẽ cập nhật dữ liệu theo thời gian thực!** 🎉
+
+---
+
+## **🔥 Tổng kết**
+✅ **Cài đặt Redis cho Laravel**
+✅ **Cấu hình Redis, Queue, và Broadcasting**
+✅ **Cài đặt Redis trên Windows**
+✅ **Cài đặt Redis Extension cho PHP**
+✅ **Chạy Laravel Echo Server để nhận sự kiện realtime**
+
+Bây giờ, bạn đã có hệ thống **Realtime với Redis, Laravel, và WebSockets** hoạt động! 🚀
