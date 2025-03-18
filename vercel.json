@@ -40,6 +40,6 @@
       "REDIS_PORT": "6379",
       "REDIS_CLIENT": "predis",
       "REDIS_DB": "0",
-      "REDIS_CACHE_DB": "1",
+      "REDIS_CACHE_DB": "1"
     }
   }
